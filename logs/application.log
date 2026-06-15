@@ -1,0 +1,198 @@
+2026-06-13 03:11:08,629 - INFO - Program Started
+2026-06-13 03:11:22,021 - INFO - Program Started
+2026-06-13 03:15:32,989 - INFO - Program Started
+2026-06-13 03:15:32,990 - WARNING - Test Warning
+2026-06-13 03:15:32,990 - ERROR - Test Error
+2026-06-13 03:15:32,994 - DEBUG - Test Debug
+2026-06-13 03:44:47,864 - INFO - Program Started
+2026-06-13 03:44:47,864 - WARNING - Test Warning
+2026-06-13 03:44:47,864 - ERROR - Test Error
+2026-06-13 03:44:47,865 - DEBUG - Test Debug
+2026-06-13 08:18:29,841 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:18:29,844 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:20:44,759 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:20:44,762 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:20:47,314 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:22:28,152 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:22:28,154 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:22:29,748 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:22:29,765 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:23:55,124 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:23:55,126 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:23:56,896 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:23:56,900 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:23:56,905 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:25:35,448 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:25:35,451 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:25:37,087 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:25:37,091 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:25:37,097 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:25:37,103 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:27:27,157 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:27:27,158 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:27:28,814 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:27:28,819 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:27:28,826 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:27:28,830 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:27:28,855 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:27:28,875 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:28:56,833 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:28:56,836 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:28:58,507 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:28:58,511 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:28:58,517 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:28:58,521 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:28:58,537 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:28:58,543 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:28:59,323 - scanners.process_scanner - INFO - Process Scanner: 305 processes found
+2026-06-13 08:30:14,817 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:30:14,819 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:30:16,353 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:30:16,357 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:30:16,362 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:30:16,366 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:30:16,378 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:30:16,384 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:30:17,031 - scanners.process_scanner - INFO - Process Scanner: 303 processes found
+2026-06-13 08:30:17,624 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:31:48,586 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:31:48,589 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:31:50,273 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:31:50,279 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:31:50,285 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:31:50,289 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:31:50,302 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:31:50,310 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:31:51,014 - scanners.process_scanner - INFO - Process Scanner: 309 processes found
+2026-06-13 08:31:51,589 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:31:51,592 - scanners.startup_scanner - INFO - Startup Scanner: 9 items found
+2026-06-13 08:34:47,368 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:34:47,371 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:34:49,210 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:34:49,214 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:34:49,218 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:34:49,221 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:34:49,232 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:34:49,237 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:34:49,782 - scanners.process_scanner - INFO - Process Scanner: 301 processes found
+2026-06-13 08:34:50,308 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:34:50,310 - scanners.startup_scanner - INFO - Startup Scanner: 9 items found
+2026-06-13 08:35:24,508 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:35:24,510 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:35:25,965 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:35:25,971 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:35:25,978 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:35:25,983 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:35:25,998 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:35:26,004 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:35:26,655 - scanners.process_scanner - INFO - Process Scanner: 302 processes found
+2026-06-13 08:35:27,213 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:35:27,215 - scanners.startup_scanner - INFO - Startup Scanner: 9 items found
+2026-06-13 08:35:27,216 - scanners.metadata_extractor - INFO - Metadata Extractor: 10 apps enriched
+2026-06-13 08:38:40,933 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:38:40,936 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:38:42,961 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:38:42,965 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:38:42,969 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:38:42,972 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:38:42,986 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:38:42,990 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:38:43,576 - scanners.process_scanner - INFO - Process Scanner: 302 processes found
+2026-06-13 08:38:44,085 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:38:44,087 - scanners.startup_scanner - INFO - Startup Scanner: 9 items found
+2026-06-13 08:38:44,088 - scanners.metadata_extractor - INFO - Metadata Extractor: 10 apps enriched
+2026-06-13 08:40:33,845 - scanners.msi_scanner - INFO - MSI Scanner: 332 apps found
+2026-06-13 08:40:33,848 - scanners.user_app_scanner - INFO - User App Scanner: 5 apps found
+2026-06-13 08:40:35,936 - scanners.store_scanner - INFO - Store Scanner: 148 apps found
+2026-06-13 08:40:35,941 - scanners.portable_scanner - INFO - Portable Scanner: 6 apps found
+2026-06-13 08:40:35,945 - scanners.zip_scanner - INFO - Zip Scanner: 9 files found
+2026-06-13 08:40:35,949 - scanners.browser_app_scanner - INFO - Browser App Scanner: 5 extensions found
+2026-06-13 08:40:35,961 - scanners.deleted_trace_scanner - ERROR - Leftover folder scan error: [WinError 5] Access is denied: 'C:\\Program Files\\WindowsApps'
+2026-06-13 08:40:35,965 - scanners.deleted_trace_scanner - INFO - Deleted Trace Scanner: 2 traces found
+2026-06-13 08:40:36,598 - scanners.process_scanner - INFO - Process Scanner: 306 processes found
+2026-06-13 08:40:37,104 - scanners.service_scanner - INFO - Service Scanner: 283 services found
+2026-06-13 08:40:37,106 - scanners.startup_scanner - INFO - Startup Scanner: 9 items found
+2026-06-13 08:40:40,655 - scanners.metadata_extractor - INFO - Metadata Extractor: 332 apps enriched
+2026-06-13 08:46:20,813 - application - INFO - Application Discovery Tool started
+2026-06-13 08:46:27,458 - application - INFO - Scan complete. Total apps: 491
+2026-06-13 08:56:48,638 - application - INFO - Application Discovery Tool started
+2026-06-13 08:56:56,167 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:14:32,930 - application - INFO - Application Discovery Tool started
+2026-06-13 09:14:40,247 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:25:21,059 - application - INFO - Application Discovery Tool started
+2026-06-13 09:29:54,070 - application - INFO - Application Discovery Tool started
+2026-06-13 09:31:07,891 - application - INFO - Application Discovery Tool started
+2026-06-13 09:32:20,334 - application - INFO - Application Discovery Tool started
+2026-06-13 09:32:25,364 - application - INFO - Deduplication complete: 826 unique apps
+2026-06-13 09:32:25,906 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:37:47,744 - application - INFO - Application Discovery Tool started
+2026-06-13 09:37:53,044 - application - INFO - Deduplication complete: 826 unique apps
+2026-06-13 09:37:53,545 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 09:37:53,546 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:41:24,974 - application - INFO - Application Discovery Tool started
+2026-06-13 09:41:30,757 - application - INFO - Deduplication complete: 826 unique apps
+2026-06-13 09:41:32,086 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 09:41:32,087 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:50:00,415 - application - INFO - Application Discovery Tool started
+2026-06-13 09:50:05,682 - application - INFO - Deduplication complete: 826 unique apps
+2026-06-13 09:50:06,873 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 09:50:06,874 - application - INFO - Application Discovery Tool completed
+2026-06-13 09:54:48,698 - application - INFO - Application Discovery Tool started
+2026-06-13 09:54:53,942 - application - INFO - Deduplication complete: 827 unique apps
+2026-06-13 09:54:55,206 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 09:54:55,207 - application - INFO - Application Discovery Tool completed
+2026-06-13 10:07:45,085 - application - INFO - Scan started at 2026-06-13 10:07:45.085856
+2026-06-13 10:07:52,165 - application - INFO - Deduplication: 829 unique apps
+2026-06-13 10:07:53,346 - application - INFO - Scan complete. CSV: exports\Software_Inventory_20260613_100753.csv
+2026-06-13 10:15:10,577 - application - INFO - Application Discovery Tool started
+2026-06-13 10:15:15,856 - application - INFO - Deduplication complete: 828 unique apps
+2026-06-13 10:15:17,232 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 10:15:17,233 - application - INFO - Application Discovery Tool completed
+2026-06-13 10:18:39,992 - application - INFO - Application Discovery Tool started
+2026-06-13 10:18:46,853 - application - INFO - Deduplication complete: 829 unique apps
+2026-06-13 10:18:48,025 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 10:18:48,025 - application - INFO - Application Discovery Tool completed
+2026-06-13 10:24:36,329 - application - INFO - Application Discovery Tool started
+2026-06-13 10:24:42,435 - application - INFO - Deduplication complete: 831 unique apps
+2026-06-13 10:24:43,642 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 10:24:43,643 - application - INFO - Application Discovery Tool completed
+2026-06-13 10:26:22,193 - application - INFO - Application Discovery Tool started
+2026-06-13 10:26:27,844 - application - INFO - Deduplication complete: 828 unique apps
+2026-06-13 10:26:29,032 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 10:26:29,033 - application - INFO - Application Discovery Tool completed
+2026-06-13 10:35:39,406 - application - INFO - Application Discovery Tool started
+2026-06-13 10:35:45,402 - application - INFO - Deduplication complete: 829 unique apps
+2026-06-13 10:39:08,412 - application - INFO - Application Discovery Tool started
+2026-06-13 10:39:13,901 - application - INFO - Deduplication complete: 829 unique apps
+2026-06-13 10:39:15,075 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 10:39:15,076 - application - INFO - Application Discovery Tool completed
+2026-06-13 23:54:16,848 - application - INFO - Application Discovery Tool started
+2026-06-13 23:54:28,962 - application - INFO - Deduplication complete: 836 unique apps
+2026-06-13 23:54:30,714 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-13 23:54:30,722 - application - INFO - Application Discovery Tool completed
+2026-06-14 00:47:02,453 - application - INFO - Application Discovery Tool started
+2026-06-14 00:47:09,070 - application - INFO - Deduplication complete: 830 unique apps
+2026-06-14 04:11:42,372 - application - INFO - Application Discovery Tool started
+2026-06-14 04:11:48,936 - application - INFO - Deduplication complete: 828 unique apps
+2026-06-14 04:11:50,579 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-14 04:14:37,399 - application - INFO - Application Discovery Tool started
+2026-06-14 04:14:43,690 - application - INFO - Deduplication complete: 828 unique apps
+2026-06-14 04:14:45,070 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-14 04:14:45,072 - application - INFO - Application Discovery Tool completed
+2026-06-14 04:49:04,013 - application - INFO - Application Discovery Tool started
+2026-06-14 04:49:09,962 - application - INFO - Deduplication complete: 827 unique apps
+2026-06-14 04:49:11,334 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-14 04:49:11,336 - application - INFO - Application Discovery Tool completed
+2026-06-14 05:00:57,575 - application - INFO - Application Discovery Tool started
+2026-06-14 05:01:03,667 - application - INFO - Deduplication complete: 825 unique apps
+2026-06-14 05:01:16,165 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-14 05:01:16,166 - application - INFO - Application Discovery Tool completed
+2026-06-14 23:23:21,311 - application - INFO - Scan started at 2026-06-14 23:23:21.311016
+2026-06-14 23:23:28,225 - application - INFO - Deduplication: 829 unique apps
+2026-06-14 23:23:29,536 - application - INFO - Scan complete. CSV: exports\Software_Inventory_20260614_232329.csv
+2026-06-14 23:39:52,138 - application - INFO - Application Discovery Tool started
+2026-06-14 23:39:59,015 - application - INFO - Deduplication complete: 826 unique apps
+2026-06-14 23:40:11,374 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-14 23:40:11,376 - application - INFO - Application Discovery Tool completed
+2026-06-15 10:19:51,679 - application - INFO - Application Discovery Tool started
+2026-06-15 10:20:00,582 - application - INFO - Deduplication complete: 836 unique apps
