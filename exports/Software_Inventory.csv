@@ -268,7 +268,6 @@ ApplicationFrameHost,,,,,,processes
 aswEngSrv,,,,,,processes
 aswidsagent,,,,,,processes
 aswToolsSvc,,,,,,processes
-audiodg,,,,,,processes
 AvastSvc,,,,,,processes
 AvastUI,,,,,,processes
 backgroundTaskHost,,,,,,processes
@@ -284,7 +283,6 @@ DesktopExtension,,,,,,processes
 DiagsCap,,,,,,processes
 dllhost,,,,,,processes
 dwm,,,,,,processes
-EXCEL,,,,,,processes
 explorer,,,,,,processes
 FileCoAuth,,,,,,processes
 FileSyncHelper,,,,,,"processes, services"

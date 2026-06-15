@@ -230,3 +230,7 @@
 2026-06-15 12:56:48,894 - application - INFO - Deduplication complete: 672 unique apps
 2026-06-15 12:57:16,412 - application - INFO - CSV exported: exports\Software_Inventory.csv
 2026-06-15 12:57:16,415 - application - INFO - Application Discovery Tool completed
+2026-06-15 13:06:27,437 - application - INFO - Application Discovery Tool started
+2026-06-15 13:06:44,324 - application - INFO - Deduplication complete: 670 unique apps
+2026-06-15 13:07:11,752 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-15 13:07:11,754 - application - INFO - Application Discovery Tool completed
