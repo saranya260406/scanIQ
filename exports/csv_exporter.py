@@ -5,6 +5,8 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# இந்த sources-ஐ CSV-ல போடக்கூடாது
+SKIP_SOURCES = ['zip_files', 'portable_apps']
 
 class CSVExporter:
 
@@ -34,11 +36,29 @@ class CSVExporter:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
 
-                for app in app_list:
-                    writer.writerow(self._map_app(app))
+                skipped = 0
+                exported = 0
 
-            logger.info(f"CSV exported: {filepath} ({len(app_list)} apps)")
-            print(f"\n[Export] ✓ {len(app_list)} apps exported → {filepath}")
+                for app in app_list:
+                    # Source check — zip_files, portable_apps skip பண்ணு
+                    sources = app.get('sources', [app.get('source', '')])
+                    if isinstance(sources, str):
+                        sources = [sources]
+
+                    should_skip = any(
+                        skip in src for src in sources for skip in SKIP_SOURCES
+                    )
+
+                    if should_skip:
+                        skipped += 1
+                        continue
+
+                    writer.writerow(self._map_app(app))
+                    exported += 1
+
+            logger.info(f"CSV exported: {filepath} ({exported} apps, {skipped} skipped)")
+            print(f"\n[Export] ✓ {exported} apps exported → {filepath}")
+            print(f"[Export] {skipped} installer/portable files skipped")
             return filepath
 
         except Exception as e:
