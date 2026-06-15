@@ -5,10 +5,10 @@ Avast SecureLine VPN,Avast Software,Unknown,280.0 MB,26.5.12311.17168,C:\Program
 Git,The Git Development Community,17-06-2025,355.56 MB,2.50.0,C:\Program Files\Git\,msi_apps
 Microsoft Office Home and Student 2021 - en-us,Microsoft Corporation,Unknown,,16.0.20026.20168,C:\Program Files\Microsoft Office,msi_apps
 HP Documentation,HP Inc.,Unknown,,1.0.0.1,Unknown,msi_apps
-McAfee,"McAfee, LLC",Unknown,285.15 MB,1.39.160.1,Unknown,msi_apps
-Microsoft OneDrive,Microsoft Corporation,Unknown,526.89 MB,26.088.0510.0004,Unknown,msi_apps
+McAfee,"McAfee, LLC",Unknown,285.15 MB,1.39.160.1,C:\Program Files\McAfee\wps\1.39.160.1,msi_apps
+Microsoft OneDrive,Microsoft Corporation,Unknown,526.89 MB,26.088.0510.0004,C:\Program Files\Microsoft OneDrive\26.088.0510.0004,msi_apps
 Microsoft OneNote - en-us,Microsoft Corporation,Unknown,,16.0.20026.20168,C:\Program Files\Microsoft Office,msi_apps
-Unity Hub 3.10.0,Unity Technologies Inc.,Unknown,575.61 MB,3.10.0,Unknown,msi_apps
+Unity Hub 3.10.0,Unity Technologies Inc.,Unknown,575.61 MB,3.10.0,C:\Program Files\Unity Hub,msi_apps
 Microsoft Visual C++ 2013 x64 Additional Runtime - 12.0.40664,Microsoft Corporation,31-03-2025,11.51 MB,12.0.40664,Unknown,msi_apps
 Autodesk CER,Autodesk Inc.,27-05-2025,50.97 MB,7.1.2.840,Unknown,msi_apps
 Autodesk Interoperability Engine Manager,"Autodesk, Inc.",27-05-2025,25.48 MB,1.3.1.2,C:\Program Files\Common Files\Autodesk Shared\Interoperability Engine Manager\,msi_apps
@@ -17,7 +17,7 @@ AutoCAD 2026 - English,Autodesk,27-05-2025,9.05 MB,25.1.60.0,C:\Program Files\Au
 Microsoft .NET Host - 8.0.11 (x64),Microsoft Corporation,27-05-2025,0.47 MB,64.44.23191,Unknown,msi_apps
 Microsoft Visual C++ 2022 X64 Minimum Runtime - 14.44.35211,Microsoft Corporation,14-02-2026,2.35 MB,14.44.35211,Unknown,msi_apps
 Microsoft Visual C++ 2013 x64 Minimum Runtime - 12.0.40664,Microsoft Corporation,31-03-2025,2.46 MB,12.0.40664,Unknown,msi_apps
-HP One Agent,HP Inc.,10-06-2026,244.42 MB,1.3.214.7339,Unknown,msi_apps
+HP One Agent,HP Inc.,10-06-2026,244.42 MB,1.3.214.7339,C:\ProgramData\Package Cache\{54E95B92-D59B-4461-9FD4-863FE612A796},msi_apps
 Autodesk Save to Web and Mobile,Autodesk,27-05-2025,33.66 MB,3.1.8,C:\Program Files\Autodesk\,msi_apps
 Python 3.13.2 pip Bootstrap (64-bit),Python Software Foundation,28-02-2025,0.28 MB,3.13.2150.0,Unknown,msi_apps
 Python 3.13.2 Executables (64-bit),Python Software Foundation,08-04-2025,2.5 MB,3.13.2150.0,Unknown,msi_apps
@@ -44,12 +44,12 @@ Java(TM) SE Development Kit 24.0.1 (64-bit),Oracle Corporation,30-04-2025,386.13
 Microsoft .NET Host FX Resolver - 8.0.11 (x64),Microsoft Corporation,27-05-2025,0.32 MB,64.44.23191,Unknown,msi_apps
 AutoCAD Open in Desktop,Autodesk,27-05-2025,36.82 MB,1.0.28.0,Unknown,msi_apps
 Visual Studio Build Tools 2019,Microsoft Corporation,08-04-2025,,16.11.45,C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools,msi_apps
-Dev-C++,Bloodshed Software,Unknown,,5.11,Unknown,msi_apps
+Dev-C++,Bloodshed Software,Unknown,,5.11,C:\Program Files (x86)\Dev-Cpp,msi_apps
 Google Chrome,Google LLC,12-06-2026,452.06 MB,149.0.7827.104,C:\Program Files\Google\Chrome\Application,msi_apps
 Copilot,Microsoft Corporation,10-06-2026,1.94 GB,149.0.4022.62,C:\Program Files (x86)\Microsoft\Copilot\Application,msi_apps
 Microsoft Edge WebView2 Runtime,Microsoft Corporation,15-06-2026,1.95 GB,149.0.4022.69,C:\Program Files (x86)\Microsoft\EdgeWebView\Application,msi_apps
-Microsoft Visual C++ 2013 Redistributable (x64) - 12.0.40664,Microsoft Corporation,Unknown,20.57 MB,12.0.40664.0,Unknown,msi_apps
-Microsoft Visual C++ 2015-2022 Redistributable (x86) - 14.44.35211,Microsoft Corporation,Unknown,18.24 MB,14.44.35211.0,Unknown,msi_apps
+Microsoft Visual C++ 2013 Redistributable (x64) - 12.0.40664,Microsoft Corporation,Unknown,20.57 MB,12.0.40664.0,C:\ProgramData\Package Cache\{042d26ef-3dbe-4c25-95d3-4c1b11b235a7},msi_apps
+Microsoft Visual C++ 2015-2022 Redistributable (x86) - 14.44.35211,Microsoft Corporation,Unknown,18.24 MB,14.44.35211.0,C:\ProgramData\Package Cache\{0b5169e3-39da-4313-808e-1f9c0407f3bf},msi_apps
 Autodesk App Manager,Autodesk,27-05-2025,5.96 MB,3.6.0,C:\Program Files (x86)\Autodesk\,msi_apps
 Avast Update Helper,AVAST Software,06-03-2025,0.03 MB,1.8.1993.6,Unknown,msi_apps
 Microsoft Edge,Microsoft Corporation,31-03-2025,1.95 GB,149.0.4022.69,Unknown,msi_apps
@@ -61,14 +61,14 @@ vs_FileTracker_Singleton,Microsoft Corporation,08-04-2025,0.83 MB,16.11.34827,Un
 PDFProSuite,PDF Pro Suite,05-12-2024,1.31 MB,10.1.2045.4,C:\Users\sumal\AppData\Local\PDFProSuite\,msi_apps
 Microsoft Visual C++ 2022 X86 Additional Runtime - 14.44.35211,Microsoft Corporation,14-02-2026,10.11 MB,14.44.35211,Unknown,msi_apps
 Python Launcher,Python Software Foundation,28-02-2025,1.5 MB,3.13.2150.0,Unknown,msi_apps
-Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.44.35211,Microsoft Corporation,Unknown,20.74 MB,14.44.35211.0,Unknown,msi_apps
+Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.44.35211,Microsoft Corporation,Unknown,20.74 MB,14.44.35211.0,C:\ProgramData\Package Cache\{d8bbe9f9-7c5b-42c6-b715-9ee898a2e515},msi_apps
 Microsoft Visual Studio Setup WMI Provider,Microsoft Corporation,08-04-2025,4.45 MB,3.7.2182.35401,Unknown,msi_apps
 Autodesk Featured Apps,Autodesk,27-05-2025,18.97 MB,3.6.0,C:\Program Files (x86)\Autodesk\,msi_apps
 WPTx64,Microsoft,27-05-2025,47.16 MB,10.1.19041.1,Unknown,msi_apps
-CapCut,Bytedance Pte. Ltd.,Unknown,,4.3.0.1694,Unknown,"msi_apps, user_apps"
-CodeBlocks,The Code::Blocks Team,Unknown,,20.03,Unknown,"msi_apps, user_apps"
+CapCut,Bytedance Pte. Ltd.,Unknown,,4.3.0.1694,C:\Users\sumal\AppData\Local\CapCut\Apps,"msi_apps, user_apps"
+CodeBlocks,The Code::Blocks Team,Unknown,,20.03,C:\Program Files\CodeBlocks,"msi_apps, user_apps"
 GitHub Desktop,"GitHub, Inc.",15-06-2026,180.83 MB,3.5.12,C:\Users\sumal\AppData\Local\GitHubDesktop,"msi_apps, user_apps"
-Python 3.13.2 (64-bit),Python Software Foundation,Unknown,159.21 MB,3.13.2150.0,Unknown,"msi_apps, user_apps"
+Python 3.13.2 (64-bit),Python Software Foundation,Unknown,159.21 MB,3.13.2150.0,C:\Users\sumal\AppData\Local\Package Cache\{2f6912bf-a96d-496e-9d97-7d9b771df28d},"msi_apps, user_apps"
 Ollama version 0.30.8,Ollama,15-06-2026,3.0 GB,0.30.8,C:\Users\sumal\AppData\Local\Programs\Ollama\,"msi_apps, user_apps"
 Microsoft Visual Studio Code (User),Microsoft Corporation,12-06-2026,804.61 MB,1.124.2,C:\Users\sumal\AppData\Local\Programs\Microsoft VS Code\,"msi_apps, user_apps"
 Microsoft.Windows.OOBENetworkConnectionFlow,"CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",,,10.0.21302.1000,C:\Windows\SystemApps\Microsoft.Windows.OOBENetworkConnectionFlow_cw5n1h2txyewy,store_apps
@@ -268,6 +268,7 @@ ApplicationFrameHost,,,,,,processes
 aswEngSrv,,,,,,processes
 aswidsagent,,,,,,processes
 aswToolsSvc,,,,,,processes
+audiodg,,,,,,processes
 AvastSvc,,,,,,processes
 AvastUI,,,,,,processes
 backgroundTaskHost,,,,,,processes
@@ -283,12 +284,12 @@ DesktopExtension,,,,,,processes
 DiagsCap,,,,,,processes
 dllhost,,,,,,processes
 dwm,,,,,,processes
+EXCEL,,,,,,processes
 explorer,,,,,,processes
 FileCoAuth,,,,,,processes
 FileSyncHelper,,,,,,"processes, services"
 FNPLicensingService64,,,,,,processes
 fontdrvhost,,,,,,processes
-git,,,,,,processes
 GitHubDesktop,,,,,,processes
 HP.HPX,,,,,,processes
 HPAudioCenter,,,,,,processes
@@ -338,7 +339,6 @@ servicehost,,,,,,processes
 services,,,,,,processes
 ShellExperienceHost,,,,,,processes
 sihost,,,,,,processes
-smartscreen,,,,,,processes
 smss,,,,,,processes
 SnippingTool,,,,,,processes
 splwow64,,,,,,processes

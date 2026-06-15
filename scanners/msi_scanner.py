@@ -1,6 +1,7 @@
 import winreg
 import datetime
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -14,33 +15,47 @@ class MSIScanner:
 
     def scan(self):
         apps = []
+
         for hive, path in self.REGISTRY_PATHS:
             apps.extend(self._scan_registry_path(hive, path))
+
         logger.info(f"MSI Scanner: {len(apps)} apps found")
         return apps
 
     def _scan_registry_path(self, hive, path):
         apps = []
+
         try:
             registry_key = winreg.OpenKey(hive, path)
             num_subkeys = winreg.QueryInfoKey(registry_key)[0]
+
             for i in range(num_subkeys):
+
                 try:
                     subkey_name = winreg.EnumKey(registry_key, i)
                     subkey_path = path + "\\" + subkey_name
+
                     subkey = winreg.OpenKey(hive, subkey_path)
+
                     app = self._extract_app_info(subkey)
+
                     if app and app.get('name'):
                         apps.append(app)
+
                     winreg.CloseKey(subkey)
+
                 except Exception:
                     continue
+
             winreg.CloseKey(registry_key)
+
         except Exception as e:
             logger.error(f"Registry read error: {e}")
+
         return apps
 
     def _extract_app_info(self, subkey):
+
         def get_value(key, name):
             try:
                 return winreg.QueryValueEx(key, name)[0]
@@ -48,6 +63,7 @@ class MSIScanner:
                 return None
 
         name = get_value(subkey, 'DisplayName')
+
         if not name:
             return None
 
@@ -57,21 +73,50 @@ class MSIScanner:
         size_kb = get_value(subkey, 'EstimatedSize')
         size_mb = round(size_kb / 1024, 2) if size_kb else None
 
+        uninstall_string = get_value(subkey, 'UninstallString') or ''
+
+        # Install Location
+        install_location = get_value(subkey, 'InstallLocation')
+
+        if not install_location and uninstall_string:
+
+            try:
+                cleaned = uninstall_string.replace('"', '')
+
+                if ".exe" in cleaned.lower():
+
+                    exe_index = cleaned.lower().find(".exe")
+                    exe_path = cleaned[:exe_index + 4]
+
+                    install_location = os.path.dirname(exe_path)
+
+            except Exception:
+                pass
+
+        if not install_location:
+            install_location = "Unknown"
+
         return {
             'name': name,
             'publisher': get_value(subkey, 'Publisher') or 'Unknown',
             'version': get_value(subkey, 'DisplayVersion') or 'Unknown',
             'install_date': install_date,
-            'install_location': get_value(subkey, 'InstallLocation') or 'Unknown',
+            'install_location': install_location,
             'size_mb': size_mb,
-            'uninstall_string': get_value(subkey, 'UninstallString') or '',
+            'uninstall_string': uninstall_string,
             'type': 'MSI'
         }
 
     def _parse_date(self, raw_date):
+
         if not raw_date or len(str(raw_date)) != 8:
             return 'Unknown'
+
         try:
-            return datetime.datetime.strptime(str(raw_date), '%Y%m%d').strftime('%d-%m-%Y')
+            return datetime.datetime.strptime(
+                str(raw_date),
+                '%Y%m%d'
+            ).strftime('%d-%m-%Y')
+
         except Exception:
             return 'Unknown'
