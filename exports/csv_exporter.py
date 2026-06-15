@@ -25,8 +25,9 @@ class CSVExporter:
             'Installed On',
             'Size (MB)',
             'Version',
+            'Install Location',
             'Source',
-        ]
+]
 
         try:
             with open(filepath, 'w', newline='', encoding='utf-8-sig') as csvfile:
@@ -68,13 +69,14 @@ class CSVExporter:
             source_str = self._safe(app.get('source', ''))
 
         return {
-            'Name'        : self._safe(app.get('name') or app.get('app_name')),
-            'Publisher'   : self._safe(app.get('publisher') or app.get('vendor')),
-            'Installed On': self._safe(app.get('install_date')),
-            'Size (MB)'   : size_str,
-            'Version'     : self._safe(app.get('version')),
-            'Source'      : source_str,
-        }
+          'Name'            : self._safe(app.get('name') or app.get('app_name')),
+          'Publisher'       : self._safe(app.get('publisher') or app.get('vendor')),
+          'Installed On'    : self._safe(app.get('install_date')),
+          'Size (MB)'       : size_str,
+          'Version'         : self._safe(app.get('version')),
+          'Install Location': self._safe(app.get('install_location')),
+          'Source'          : source_str,
+}
 
     def _safe(self, value) -> str:
         if value is None:
