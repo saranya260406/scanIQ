@@ -1,11 +1,14 @@
+from dotenv import load_dotenv
+import os
 from logging_module.logger_test import setup_logger
 from scanners.scanner_manager import ScannerManager
 from ai.gemini_classifier import GeminiClassifier
 from core.deduplication_engine import DeduplicationEngine
 from exports.csv_exporter import CSVExporter
 
-
-GEMINI_API_KEY = "AQ.Ab8RN6LWIl3yOFO5Xq_v1BXnN6TT7Npt1BtAnrQZZEZ5RYvSyQ"
+# .env file load பண்ணும்
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 def main():
     # Logging setup
@@ -43,7 +46,7 @@ def main():
     print(f"  Startup Items   : {summary['startup_count']}")
     print("=" * 50)
 
-    # Step 2: Deduplication
+    # Step 2: Rule-based Deduplication (existing)
     print("\n[Dedup] Removing duplicates...")
     dedup_engine = DeduplicationEngine()
     clean_apps = dedup_engine.deduplicate(results)
@@ -56,20 +59,38 @@ def main():
     print(f"  Unique Apps     : {dedup_summary['total_unique_apps']}")
     print("=" * 50)
 
-    # Step 3: Gemini AI Classification
-    print("\n[AI] Gemini Classification starting...")
-    ai_log.info("Gemini classification starting")
+    # Step 3: Gemini AI
+    print("\n[AI] Gemini starting...")
+    ai_log.info("Gemini starting")
 
     classifier = GeminiClassifier(GEMINI_API_KEY)
-
     classified_apps = []
 
     if classifier.check_internet():
         print("[AI] Internet available — Online mode (Gemini)")
         ai_log.info("Online mode — Gemini API")
 
-        print(f"[AI] Classifying {len(clean_apps)} apps...")
-        classified_apps = classifier.classify_apps(clean_apps)  # எல்லா apps-உம்
+        # Step 3a: AI Deduplication (NEW)
+        print(f"\n[AI Dedup] {len(clean_apps)} apps — AI duplicate filter starting...")
+        ai_log.info(f"AI Deduplication starting: {len(clean_apps)} apps")
+
+        ai_clean_apps = classifier.deduplicate_apps(clean_apps)
+
+        print("\n" + "=" * 50)
+        print("  AI DEDUPLICATION COMPLETE")
+        print("=" * 50)
+        print(f"  Before AI Dedup : {len(clean_apps)}")
+        print(f"  After AI Dedup  : {len(ai_clean_apps)}")
+        print(f"  Removed         : {len(clean_apps) - len(ai_clean_apps)}")
+        print("=" * 50)
+
+        ai_log.info(f"AI Deduplication complete: {len(clean_apps)} → {len(ai_clean_apps)} apps")
+
+        # Step 3b: AI Classification (existing)
+        print(f"\n[AI] Classifying {len(ai_clean_apps)} apps...")
+        ai_log.info("Gemini classification starting")
+
+        classified_apps = classifier.classify_apps(ai_clean_apps)
 
         print(f"\n[AI] Classification Results (first 5):")
         for app in classified_apps[:5]:

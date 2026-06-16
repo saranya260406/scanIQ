@@ -1,5 +1,5 @@
 {
   "scan_interval_hours": 24,
   "output_dir": "exports",
-  "gemini_api_key": "AQ.Ab8RN6LWIl3yOFO5Xq_v1BXnN6TT7Npt1BtAnrQZZEZ5RYvSyQ"
+  "gemini_api_key": "${GEMINI_API_KEY}"
 }
