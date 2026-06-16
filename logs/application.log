@@ -220,3 +220,17 @@
 2026-06-15 12:56:53,761 - application - INFO - Deduplication complete: 633 unique apps
 2026-06-15 12:57:17,313 - application - INFO - CSV exported: exports\Software_Inventory.csv
 2026-06-15 12:57:17,314 - application - INFO - Application Discovery Tool completed
+2026-06-16 10:36:44,871 - application - INFO - Application Discovery Tool started
+2026-06-16 10:37:51,184 - application - INFO - Deduplication complete: 633 unique apps
+2026-06-16 10:37:51,206 - application - INFO - Deduplication complete: 633 unique apps
+2026-06-16 10:37:51,235 - application - INFO - Deduplication complete: 633 unique apps
+2026-06-16 10:38:15,934 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-16 10:38:15,935 - application - INFO - Application Discovery Tool completed
+2026-06-16 10:38:15,936 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-16 10:38:15,940 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-16 10:38:15,942 - application - INFO - Application Discovery Tool completed
+2026-06-16 10:38:15,942 - application - INFO - Application Discovery Tool completed
+2026-06-16 11:41:05,250 - application - INFO - Application Discovery Tool started
+2026-06-16 11:41:43,709 - application - INFO - Deduplication complete: 638 unique apps
+2026-06-16 11:42:07,013 - application - INFO - CSV exported: exports\Software_Inventory.csv
+2026-06-16 11:42:07,015 - application - INFO - Application Discovery Tool completed
