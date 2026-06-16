@@ -26,6 +26,7 @@ class CSVExporter:
             'Size (MB)',
             'Version',
             'Install Location',
+            'Drive',
             'Source',
 ]
 
@@ -74,8 +75,9 @@ class CSVExporter:
           'Installed On'    : self._safe(app.get('install_date')),
           'Size (MB)'       : size_str,
           'Version'         : self._safe(app.get('version')),
-          'Install Location': self._safe(app.get('install_location')),
-          'Source'          : source_str,
+                    'Install Location': self._safe(app.get('install_location')),
+                    'Drive'           : self._detect_drive(app),
+                    'Source'          : source_str,
 }
 
     def _safe(self, value) -> str:
@@ -88,6 +90,21 @@ class CSVExporter:
         if isinstance(value, dict):
             return ''
         return str(value)
+
+    def _detect_drive(self, app: dict) -> str:
+        """Detect the drive letter (e.g. 'C:') from an install path.
+        Returns empty string if not found.
+        """
+        path = app.get('install_location') or app.get('installLocation') or app.get('path') or ''
+        if not path:
+            return ''
+        try:
+            drive, _ = os.path.splitdrive(str(path))
+            if drive:
+                return drive.upper()
+        except Exception:
+            return ''
+        return ''
 
     def export_summary(self, app_list: list) -> dict:
         return {
