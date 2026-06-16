@@ -5,7 +5,7 @@ from core.deduplication_engine import DeduplicationEngine
 from exports.csv_exporter import CSVExporter
 
 
-GEMINI_API_KEY = "AQ.Ab8RN6LMvk6f4VHEPTTrYBC83wuPcqaDqUVedaBxbbeIq-xc-g"
+GEMINI_API_KEY = "AQ.Ab8RN6LWIl3yOFO5Xq_v1BXnN6TT7Npt1BtAnrQZZEZ5RYvSyQ"
 
 def main():
     # Logging setup
