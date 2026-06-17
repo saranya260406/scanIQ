@@ -3,7 +3,6 @@ import os
 from scanners.msi_scanner import MSIScanner
 from scanners.user_app_scanner import UserAppScanner
 from scanners.store_scanner import StoreScanner
-from scanners.portable_scanner import PortableScanner
 from scanners.zip_scanner import ZipScanner
 from scanners.browser_app_scanner import BrowserAppScanner
 from scanners.deleted_trace_scanner import DeletedTraceScanner
@@ -11,44 +10,45 @@ from scanners.process_scanner import ProcessScanner
 from scanners.service_scanner import ServiceScanner
 from scanners.startup_scanner import StartupScanner
 from scanners.metadata_extractor import MetadataExtractor
+# PortableScanner — disabled (scans all files, too slow)
+# from scanners.portable_scanner import PortableScanner
 
 logger = logging.getLogger(__name__)
 
 class ScannerManager:
 
     def __init__(self):
-        self.msi_scanner = MSIScanner()
-        self.user_scanner = UserAppScanner()
-        self.store_scanner = StoreScanner()
-        self.portable_scanner = PortableScanner()
-        self.zip_scanner = ZipScanner()
-        self.browser_scanner = BrowserAppScanner()
-        self.deleted_scanner = DeletedTraceScanner()
-        self.process_scanner = ProcessScanner()
-        self.service_scanner = ServiceScanner()
-        self.startup_scanner = StartupScanner()
+        self.msi_scanner      = MSIScanner()
+        self.user_scanner     = UserAppScanner()
+        self.store_scanner    = StoreScanner()
+        self.zip_scanner      = ZipScanner()
+        self.browser_scanner  = BrowserAppScanner()
+        self.deleted_scanner  = DeletedTraceScanner()
+        self.process_scanner  = ProcessScanner()
+        self.service_scanner  = ServiceScanner()
+        self.startup_scanner  = StartupScanner()
         self.metadata_extractor = MetadataExtractor()
+        # self.portable_scanner = PortableScanner()  # disabled
 
     def _extract_drive(self, path: str):
-        """
-        C:\Program Files\abc.exe -> C:
-        """
         if not path:
             return "UNKNOWN"
         return os.path.splitdrive(path)[0] or "UNKNOWN"
 
     def _add_drive_column(self, items):
-        """
-        Each item dict-க்கு drive field add pannum
-        """
         for item in items:
-            # assume scanner returns dict with 'path'
-            path = item.get("path", "")
+            path = (
+                item.get("install_location") or
+                item.get("path") or
+                item.get("location") or
+                item.get("command") or
+                item.get("expected_location") or
+                ""
+            )
             item["drive"] = self._extract_drive(path)
         return items
 
     def run_all_scans(self):
-
         results = {}
 
         print("\n[1] MSI Apps Scanning...")
@@ -63,9 +63,9 @@ class ScannerManager:
         results['store_apps'] = self._add_drive_column(self.store_scanner.scan())
         print(f"    ✓ {len(results['store_apps'])} Store apps found")
 
-        print("[4] Portable Apps Scanning...")
-        results['portable_apps'] = self._add_drive_column(self.portable_scanner.scan())
-        print(f"    ✓ {len(results['portable_apps'])} Portable apps found")
+        # [4] Portable Apps — DISABLED (too slow, scans all files)
+        results['portable_apps'] = []
+        print("[4] Portable Apps — SKIPPED (disabled for speed)")
 
         print("[5] Zip / Setup Files Scanning...")
         results['zip_files'] = self._add_drive_column(self.zip_scanner.scan())
@@ -107,15 +107,15 @@ class ScannerManager:
             len(results.get('portable_apps', []))
         )
         return {
-            'total_apps': total_apps,
-            'msi_count': len(results.get('msi_apps', [])),
-            'user_count': len(results.get('user_apps', [])),
-            'store_count': len(results.get('store_apps', [])),
-            'portable_count': len(results.get('portable_apps', [])),
-            'zip_count': len(results.get('zip_files', [])),
-            'browser_count': len(results.get('browser_apps', [])),
-            'deleted_count': len(results.get('deleted_traces', [])),
-            'process_count': len(results.get('processes', [])),
-            'service_count': len(results.get('services', [])),
-            'startup_count': len(results.get('startup_items', [])),
+            'total_apps':     total_apps,
+            'msi_count':      len(results.get('msi_apps', [])),
+            'user_count':     len(results.get('user_apps', [])),
+            'store_count':    len(results.get('store_apps', [])),
+            'portable_count': 0,
+            'zip_count':      len(results.get('zip_files', [])),
+            'browser_count':  len(results.get('browser_apps', [])),
+            'deleted_count':  len(results.get('deleted_traces', [])),
+            'process_count':  len(results.get('processes', [])),
+            'service_count':  len(results.get('services', [])),
+            'startup_count':  len(results.get('startup_items', [])),
         }
