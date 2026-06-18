@@ -9,15 +9,21 @@ class PortableScanner:
     SKIP_FOLDERS = [
         'Windows', 'System Volume Information', '$Recycle.Bin',
         'Recovery', 'PerfLogs', '$WinREAgent', 'Config.Msi',
-        'Program Files', 'Program Files (x86)', 'ProgramData',
-        'Users', 'Temp', 'tmp'
+        'ProgramData', 'Temp', 'tmp', 'WinSxS',
     ]
 
-    def _get_non_system_drives(self):
+    SKIP_DRIVES_FOLDERS = {
+        'C:\\': [
+            'Windows', 'System Volume Information', '$Recycle.Bin',
+            'Recovery', 'PerfLogs', '$WinREAgent', 'Config.Msi',
+            'ProgramData', 'Temp', 'tmp', 'WinSxS',
+            'Program Files', 'Program Files (x86)', 'Users',
+        ]
+    }
+
+    def get_all_drives(self):
         drives = []
         for letter in string.ascii_uppercase:
-            if letter == 'C':
-                continue
             drive = f"{letter}:\\"
             if os.path.exists(drive):
                 drives.append(drive)
@@ -25,7 +31,7 @@ class PortableScanner:
 
     def scan(self):
         apps = []
-        drives = self._get_non_system_drives()
+        drives = self.get_all_drives()
         logger.info(f"Portable scan drives: {drives}")
 
         for drive in drives:
@@ -36,31 +42,28 @@ class PortableScanner:
 
     def _scan_top_level_folders(self, drive_path):
         apps = []
+
+        # C: drive-க்கு extra skip folders
+        skip = self.SKIP_DRIVES_FOLDERS.get(drive_path, self.SKIP_FOLDERS)
+
         try:
             for item in os.listdir(drive_path):
                 full_path = os.path.join(drive_path, item)
 
                 if not os.path.isdir(full_path):
                     continue
-                if item in self.SKIP_FOLDERS or item.startswith('$'):
+                if item in skip or item.startswith('$'):
                     continue
 
-                # Folder-க்குள்ள .exe இருந்தா portable app
-                exe_found = None
-                try:
-                    for f in os.listdir(full_path):
-                        if f.lower().endswith('.exe'):
-                            exe_found = os.path.join(full_path, f)
-                            break
-                except Exception:
-                    pass
+                # Folder-ல இருக்கற main .exe மட்டும் pick பண்ணும்
+                main_exe = self._find_main_exe(full_path, item)
 
                 apps.append({
                     'name': item,
                     'publisher': 'Unknown',
                     'version': 'Unknown',
                     'install_location': full_path,
-                    'exe_path': exe_found or '',
+                    'exe_path': main_exe or '',
                     'size_mb': None,
                     'type': 'Portable',
                     'source': 'portable'
@@ -70,3 +73,26 @@ class PortableScanner:
             logger.error(f"Portable scan error {drive_path}: {e}")
 
         return apps
+
+    def _find_main_exe(self, folder_path, folder_name):
+        """Folder name-ஓட match ஆகற exe மட்டும் return பண்ணும்"""
+        try:
+            exes = []
+            for f in os.listdir(folder_path):
+                if f.lower().endswith('.exe'):
+                    exes.append(f)
+
+            if not exes:
+                return None
+
+            # Folder பேருக்கு close-ஆ இருக்கற exe prefer பண்ணும்
+            folder_lower = folder_name.lower()
+            for exe in exes:
+                if folder_lower in exe.lower() or exe.lower().replace('.exe', '') in folder_lower:
+                    return os.path.join(folder_path, exe)
+
+            # Match இல்லன்னா first exe return பண்ணும்
+            return os.path.join(folder_path, exes[0])
+
+        except Exception:
+            return None
