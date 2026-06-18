@@ -6,8 +6,6 @@ from scanners.store_scanner import StoreScanner
 from scanners.zip_scanner import ZipScanner
 from scanners.browser_app_scanner import BrowserAppScanner
 from scanners.deleted_trace_scanner import DeletedTraceScanner
-from scanners.process_scanner import ProcessScanner
-from scanners.service_scanner import ServiceScanner
 from scanners.startup_scanner import StartupScanner
 from scanners.metadata_extractor import MetadataExtractor
 from scanners.portable_scanner import PortableScanner
@@ -23,8 +21,6 @@ class ScannerManager:
         self.zip_scanner        = ZipScanner()
         self.browser_scanner    = BrowserAppScanner()
         self.deleted_scanner    = DeletedTraceScanner()
-        self.process_scanner    = ProcessScanner()
-        self.service_scanner    = ServiceScanner()
         self.startup_scanner    = StartupScanner()
         self.metadata_extractor = MetadataExtractor()
         self.portable_scanner   = PortableScanner()
@@ -78,22 +74,17 @@ class ScannerManager:
         results['deleted_traces'] = self._add_drive_column(self.deleted_scanner.scan())
         print(f"    ✓ {len(results['deleted_traces'])} Traces found")
 
-        print("[8] Running Processes Scanning...")
-        results['processes'] = self._add_drive_column(self.process_scanner.scan())
-        print(f"    ✓ {len(results['processes'])} Processes found")
-
-        print("[9] Windows Services Scanning...")
-        results['services'] = self._add_drive_column(self.service_scanner.scan())
-        print(f"    ✓ {len(results['services'])} Services found")
-
-        print("[10] Startup Items Scanning...")
+        print("[8] Startup Items Scanning...")
         results['startup_items'] = self._add_drive_column(self.startup_scanner.scan())
         print(f"    ✓ {len(results['startup_items'])} Startup items found")
 
-        print("[11] Metadata Extracting...")
+        print("[9] Metadata Extracting...")
         results['msi_apps'] = self.metadata_extractor.extract(results['msi_apps'])
         results['msi_apps'] = self._add_drive_column(results['msi_apps'])
         print(f"    ✓ Metadata extracted for {len(results['msi_apps'])} apps")
+
+        results['processes'] = []
+        results['services']  = []
 
         results['summary'] = self._generate_summary(results)
         return results
@@ -114,7 +105,5 @@ class ScannerManager:
             'zip_count':      len(results.get('zip_files', [])),
             'browser_count':  len(results.get('browser_apps', [])),
             'deleted_count':  len(results.get('deleted_traces', [])),
-            'process_count':  len(results.get('processes', [])),
-            'service_count':  len(results.get('services', [])),
             'startup_count':  len(results.get('startup_items', [])),
         }
