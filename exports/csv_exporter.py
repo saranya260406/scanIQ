@@ -5,7 +5,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-SKIP_SOURCES = ['zip_files']
+SKIP_SOURCES = []  # எதுவும் skip வேண்டாம்
 
 
 class CSVExporter:
@@ -70,7 +70,7 @@ class CSVExporter:
             sources = app.get('sources', [app.get('source', '')])
             if isinstance(sources, str):
                 sources = [sources]
-            if any(skip in src for src in sources for skip in SKIP_SOURCES):
+            if any(skip.lower() in src.lower() for src in sources for skip in SKIP_SOURCES):
                 skipped += 1
                 continue
             filtered.append(app)
