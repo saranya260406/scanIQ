@@ -41,8 +41,6 @@ def main():
     print(f"  Zip Files       : {summary['zip_count']}")
     print(f"  Browser Exts    : {summary['browser_count']}")
     print(f"  Deleted Traces  : {summary['deleted_count']}")
-    print(f"  Processes       : {summary['process_count']}")
-    print(f"  Services        : {summary['service_count']}")
     print(f"  Startup Items   : {summary['startup_count']}")
     print("=" * 50)
 
