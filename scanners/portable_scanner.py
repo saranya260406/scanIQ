@@ -6,15 +6,18 @@ logger = logging.getLogger(__name__)
 
 class PortableScanner:
 
-    # System folders skip பண்ணும் (Windows internal files)
     SKIP_FOLDERS = [
         'Windows', 'System Volume Information', '$Recycle.Bin',
-        'Recovery', 'PerfLogs', '$WinREAgent', 'Config.Msi'
+        'Recovery', 'PerfLogs', '$WinREAgent', 'Config.Msi',
+        'Program Files', 'Program Files (x86)', 'ProgramData',
+        'Users', 'Temp', 'tmp'
     ]
 
-    def get_all_drives(self):
+    def _get_non_system_drives(self):
         drives = []
         for letter in string.ascii_uppercase:
+            if letter == 'C':
+                continue
             drive = f"{letter}:\\"
             if os.path.exists(drive):
                 drives.append(drive)
@@ -22,53 +25,48 @@ class PortableScanner:
 
     def scan(self):
         apps = []
-        drives = self.get_all_drives()
-        logger.info(f"Found drives: {drives}")
+        drives = self._get_non_system_drives()
+        logger.info(f"Portable scan drives: {drives}")
 
         for drive in drives:
-            logger.info(f"Scanning drive: {drive}")
-            apps.extend(self._scan_folder(drive, drive))
+            apps.extend(self._scan_top_level_folders(drive))
 
-        logger.info(f"Total files found: {len(apps)}")
+        logger.info(f"Portable Scanner: {len(apps)} folders found")
         return apps
 
-    def _scan_folder(self, folder_path, drive_name):
+    def _scan_top_level_folders(self, drive_path):
         apps = []
-
         try:
-            for root, dirs, files in os.walk(folder_path):
+            for item in os.listdir(drive_path):
+                full_path = os.path.join(drive_path, item)
 
-                # System folders skip பண்ணும்
-                dirs[:] = [
-                    d for d in dirs
-                    if d not in self.SKIP_FOLDERS
-                    and not d.startswith('$')
-                ]
+                if not os.path.isdir(full_path):
+                    continue
+                if item in self.SKIP_FOLDERS or item.startswith('$'):
+                    continue
 
-                for file in files:
-                    full_path = os.path.join(root, file)
-                    ext = os.path.splitext(file)[1].lower()
-                    name = os.path.splitext(file)[0]
+                # Folder-க்குள்ள .exe இருந்தா portable app
+                exe_found = None
+                try:
+                    for f in os.listdir(full_path):
+                        if f.lower().endswith('.exe'):
+                            exe_found = os.path.join(full_path, f)
+                            break
+                except Exception:
+                    pass
 
-                    try:
-                        size_mb = round(os.path.getsize(full_path) / (1024 * 1024), 2)
-
-                        apps.append({
-                            'name': name,
-                            'file': file,
-                            'extension': ext,
-                            'publisher': 'Unknown',
-                            'version': 'Unknown',
-                            'install_location': full_path,
-                            'size_mb': size_mb,
-                            'type': 'Portable',
-                            'drive': drive_name
-                        })
-
-                    except Exception:
-                        continue
+                apps.append({
+                    'name': item,
+                    'publisher': 'Unknown',
+                    'version': 'Unknown',
+                    'install_location': full_path,
+                    'exe_path': exe_found or '',
+                    'size_mb': None,
+                    'type': 'Portable',
+                    'source': 'portable'
+                })
 
         except Exception as e:
-            logger.error(f"Drive scan error {folder_path}: {e}")
+            logger.error(f"Portable scan error {drive_path}: {e}")
 
         return apps
