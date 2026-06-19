@@ -90,14 +90,7 @@ def main():
 
         classified_apps = classifier.classify_apps(ai_clean_apps)
 
-        print(f"\n[AI] Classification Results (first 5):")
-        for app in classified_apps[:5]:
-            print(f"  - {app.get('name', 'Unknown')}")
-            print(f"    Category    : {app.get('category', 'N/A')}")
-            print(f"    Risk Level  : {app.get('risk_level', 'N/A')}")
-            print(f"    Recommend   : {app.get('recommendation', 'N/A')}")
-            print(f"    Description : {app.get('ai_description', 'N/A')}")
-            print()
+
 
         ai_log.info(f"Classification complete: {len(classified_apps)} apps")
 

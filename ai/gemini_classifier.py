@@ -1,33 +1,150 @@
 from google import genai
 import json
 import logging
+import re
+import urllib.request
 
 logger = logging.getLogger('ai_processing')
 
+
 class GeminiClassifier:
+
+    # ─────────────────────────────────────────────────────────────────
+    # Rule-based system component patterns
+    # AI-க்கு போறதுக்கு முன்னாடி இங்க filter ஆகும்
+    # ─────────────────────────────────────────────────────────────────
+    SYSTEM_COMPONENT_PATTERNS = [
+        # Windows core / shell components
+        r'^Microsoft\.Windows\..*',
+        r'^MicrosoftWindows\..*',
+        r'^windows\..*',
+        r'^Windows\..*',
+
+        # Runtimes / frameworks
+        r'^Microsoft\.NET\.Native\..*',
+        r'^Microsoft\.VCLibs\..*',
+        r'^Microsoft\.UI\.Xaml\..*',
+        r'^Microsoft\.WindowsAppRuntime.*',
+        r'^Microsoft\.Services\.Store\..*',
+
+        # System UI / shell components
+        r'^Microsoft\.LockApp$',
+        r'^Microsoft\.AAD\.BrokerPlugin$',
+        r'^Microsoft\.BioEnrollment$',
+        r'^Microsoft\.ECApp$',
+        r'^Microsoft\.CredDialogHost$',
+        r'^Microsoft\.AsyncTextService$',
+        r'^Microsoft\.AccountsControl$',
+        r'^Microsoft\.MicrosoftEdgeDevToolsClient$',
+        r'^Microsoft\.Win32WebViewHost$',
+        r'^Microsoft\.SecHealthUI$',
+        r'^Microsoft\.WidgetsPlatformRuntime$',
+        r'^Microsoft\.DesktopAppInstaller$',
+        r'^Microsoft\.Edge\.GameAssist$',
+
+        # Xbox system
+        r'^Microsoft\.Xbox.*',
+        r'^Microsoft\.XboxGameCallableUI$',
+        r'^Microsoft\.XboxIdentityProvider$',
+
+        # Mixed reality / Holo
+        r'^Holo.*',
+        r'^MixedReality.*',
+        r'^Microsoft\.MixedReality\..*',
+        r'^EnvironmentsApp$',
+        r'^Passthrough$',
+        r'^RoomAdjustment$',
+
+        # Web auth bridges
+        r'^WebAuthBridge.*',
+
+        # Misc system
+        r'^NcsiUwpApp$',
+        r'^DesktopView$',
+        r'^WhatsNew$',
+        r'^aimgr$',
+        r'^Microsoft\.Getstarted$',
+        r'^microsoft\.windowscommunicationsapps$',
+
+        # Pre-installed Microsoft Store bloatware
+        r'^Microsoft\.Bing.*',
+        r'^Microsoft\.People$',
+        r'^Microsoft\.MicrosoftStickyNotes$',
+        r'^Microsoft\.WindowsMaps$',
+        r'^Microsoft\.ZuneVideo$',
+        r'^Microsoft\.ZuneMusic$',
+        r'^Microsoft\.WindowsSoundRecorder$',
+        r'^Microsoft\.WindowsCamera$',
+        r'^Microsoft\.WindowsCalculator$',
+        r'^Microsoft\.WindowsNotepad$',
+        r'^Microsoft\.WindowsTerminal$',
+        r'^Microsoft\.Whiteboard$',
+        r'^Microsoft\.Todos$',
+        r'^Microsoft\.PowerAutomateDesktop$',
+        r'^Microsoft\.RawImageExtension$',
+        r'^Microsoft\.WebpImageExtension$',
+        r'^Microsoft\.WebMediaExtensions$',
+        r'^Microsoft\.HEIFImageExtension$',
+        r'^Microsoft\.AV1VideoExtension$',
+        r'^Clipchamp\.Clipchamp$',
+        r'^MicrosoftCorporationII\..*',
+
+        # OEM (HP / Intel) bloatware
+        r'^AD2F1837\..*',
+        r'^AppUp\.IntelGraphicsExperience$',
+
+        # GUID-only package names
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+
+        # Random-prefix store packages
+        r'^[0-9A-Z]{5,}[A-Za-z]+\..*',
+        r'^msstorefast\..*',
+    ]
 
     def __init__(self, api_key):
         self.api_key = api_key
         self.client = genai.Client(api_key=api_key)
+        # Compile patterns once for performance
+        self._compiled_patterns = [
+            re.compile(p, re.IGNORECASE)
+            for p in self.SYSTEM_COMPONENT_PATTERNS
+        ]
         logger.info("Gemini Classifier initialized")
 
     # ─────────────────────────────────────────────────────────────────
-    # NEW: AI Deduplication Method
-    # core/deduplication_engine.py output-ஐ இங்க அனுப்பு
-    # Gemini similar/near-duplicate names identify பண்ணி
-    # canonical name கொடுக்கும்
+    # Helper: Rule-based system component detector
+    # ─────────────────────────────────────────────────────────────────
+    def _is_system_component_by_rule(self, app_name: str) -> bool:
+        """Rule-based system component detection — FAST, NO API CALL."""
+        if not app_name:
+            return False
+
+        for pattern in self._compiled_patterns:
+            if pattern.match(app_name):
+                return True
+        return False
+
+    # ─────────────────────────────────────────────────────────────────
+    # Helper: Clean JSON response from Gemini
+    # ─────────────────────────────────────────────────────────────────
+    def _clean_json_response(self, response_text: str) -> str:
+        """Gemini response-ல இருந்து markdown / code fences strip பண்ணும்."""
+        text = response_text.strip()
+
+        if text.startswith('```'):
+            text = re.sub(r'^```(?:json)?\s*\n?', '', text)
+            text = re.sub(r'\n?```\s*$', '', text)
+
+        return text.strip()
+
+    # ─────────────────────────────────────────────────────────────────
+    # AI Deduplication
     # ─────────────────────────────────────────────────────────────────
     def deduplicate_apps(self, app_list: list) -> list:
         """
-        DeduplicationEngine.deduplicate() output-ஐ எடுத்து
+        DeduplicationEngine output-ஐ எடுத்து
         Gemini மூலம் similar app names identify பண்ணி
         clean unique list return பண்ணும்.
-
-        Args:
-            app_list (list): core/deduplication_engine.py output
-
-        Returns:
-            list: AI-filtered unique app list with canonical names
         """
         if not app_list:
             return []
@@ -35,74 +152,80 @@ class GeminiClassifier:
         logger.info(f"AI Deduplication started: {len(app_list)} apps")
         print(f"\n[AI Dedup] {len(app_list)} apps Gemini-க்கு அனுப்புகிறோம்...")
 
-        # Index → name mapping உருவாக்கு
+        # Index → name mapping
         name_index = {}
         for i, app in enumerate(app_list):
             name = app.get('name') or app.get('app_name') or 'Unknown'
             name_index[i] = name
 
-        # 50 names per batch
         batch_size = 50
         indices = list(name_index.keys())
-        batches = [indices[i:i+batch_size] for i in range(0, len(indices), batch_size)]
+        batches = [
+            indices[i:i + batch_size]
+            for i in range(0, len(indices), batch_size)
+        ]
 
-        # canonical map: index → canonical_name
         canonical_map = {}
 
         for b_num, batch_indices in enumerate(batches):
-            logger.info(f"AI Dedup batch {b_num+1}/{len(batches)}")
+            logger.info(f"AI Dedup batch {b_num + 1}/{len(batches)}")
             try:
                 batch_names = {str(i): name_index[i] for i in batch_indices}
                 result_map = self._deduplicate_batch(batch_names)
                 canonical_map.update(result_map)
             except Exception as e:
-                logger.error(f"AI Dedup batch {b_num+1} error: {e}")
-                # Error வந்தா original name-ஐ வச்சுக்கோ
+                logger.error(f"AI Dedup batch {b_num + 1} error: {e}")
                 for i in batch_indices:
                     canonical_map[str(i)] = name_index[i]
 
-        # Canonical name apply பண்ணி duplicates remove பண்ணு
+        # Apply canonical names + merge duplicates
         seen_canonical = {}
         clean_list = []
 
         for i, app in enumerate(app_list):
-            canonical_name = canonical_map.get(str(i), app.get('name') or app.get('app_name') or 'Unknown')
+            original_name = app.get('name') or app.get('app_name') or 'Unknown'
+            canonical_name = canonical_map.get(str(i), original_name)
+
+            if not canonical_name or not str(canonical_name).strip():
+                canonical_name = original_name
 
             if canonical_name not in seen_canonical:
-                # புதுசு — add பண்ணு
                 app_copy = app.copy()
-                app_copy['original_name'] = app.get('name') or app.get('app_name') or 'Unknown'
+                app_copy['original_name'] = original_name
                 app_copy['name'] = canonical_name
+
+                if 'sources' not in app_copy:
+                    app_copy['sources'] = [app.get('source', 'unknown')]
+
                 seen_canonical[canonical_name] = len(clean_list)
                 clean_list.append(app_copy)
             else:
-                # Duplicate — sources மட்டும் merge பண்ணு
                 existing_idx = seen_canonical[canonical_name]
                 existing = clean_list[existing_idx]
+
                 new_sources = app.get('sources', [app.get('source', 'unknown')])
                 existing_sources = existing.get('sources', [])
-                for src in new_sources:
-                    if src not in existing_sources:
-                        existing_sources.append(src)
-                existing['sources'] = existing_sources
-                logger.debug(f"AI Dedup merged: '{app.get('name')}' → '{canonical_name}'")
 
-        logger.info(f"AI Dedup complete: {len(app_list)} → {len(clean_list)} apps")
-        print(f"[AI Dedup] Done: {len(app_list)} → {len(clean_list)} unique apps")
+                for src in new_sources:
+                    if src and src not in existing_sources:
+                        existing_sources.append(src)
+
+                existing['sources'] = existing_sources
+                logger.debug(
+                    f"AI Dedup merged: '{original_name}' → '{canonical_name}'"
+                )
+
+        logger.info(
+            f"AI Dedup complete: {len(app_list)} → {len(clean_list)} apps"
+        )
+        print(
+            f"[AI Dedup] Done: {len(app_list)} → {len(clean_list)} unique apps"
+        )
 
         return clean_list
 
     def _deduplicate_batch(self, batch_names: dict) -> dict:
-        """
-        50 app names Gemini-க்கு அனுப்பி
-        canonical name mapping return பண்ணும்.
-
-        Args:
-            batch_names (dict): {"0": "VLC", "1": "VLC media player", ...}
-
-        Returns:
-            dict: {"0": "VLC media player", "1": "VLC media player", ...}
-        """
+        """50 app names Gemini-க்கு அனுப்பி canonical mapping return பண்ணும்."""
         prompt = f"""
 You are a Windows software expert. Below is a list of installed application names.
 
@@ -114,7 +237,7 @@ Your job:
 
 Rules:
 - Return ONLY valid JSON object, no explanation, no markdown, no code blocks
-- Keep exact same index numbers from input
+- Keep exact same index numbers (as strings) from input
 - Canonical name = most recognized official name
 
 Input:
@@ -123,8 +246,7 @@ Input:
 Return format:
 {{
   "0": "canonical name",
-  "1": "canonical name",
-  ...
+  "1": "canonical name"
 }}
 """
         response = self.client.models.generate_content(
@@ -132,45 +254,120 @@ Return format:
             contents=prompt
         )
 
-        response_text = response.text.strip()
+        response_text = self._clean_json_response(response.text)
 
-        # Markdown strip பண்ணு
-        if response_text.startswith('```'):
-            lines = response_text.split('\n')
-            response_text = '\n'.join(lines[1:-1])
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            logger.error(f"Dedup JSON parse error: {e}")
+            logger.error(f"Raw response: {response_text[:300]}")
+            return {k: v for k, v in batch_names.items()}
 
-        return json.loads(response_text)
+        # Ensure all keys present
+        for k, v in batch_names.items():
+            if k not in result or not result[k]:
+                result[k] = v
+
+        return result
 
     # ─────────────────────────────────────────────────────────────────
-    # EXISTING: Classification Method (மாத்தல் இல்லை)
+    # Classification with 2-Layer Filtering
     # ─────────────────────────────────────────────────────────────────
     def classify_apps(self, app_list):
         """
-        App list-ஐ batch-ஆ Gemini-க்கு அனுப்பி
-        classify பண்ணும்
+        2-Layer Filtering:
+        Layer 1: Rule-based filter (FAST, no API call)
+        Layer 2: AI classification (only for remaining apps)
+        Layer 3: AI-flagged system components removal
         """
+        if not app_list:
+            return []
+
+        # ───── LAYER 1: Rule-based pre-filter ─────
+        pre_filtered = []
+        rule_filtered_count = 0
+
+        for app in app_list:
+            name = app.get('name') or app.get('app_name') or ''
+
+            if self._is_system_component_by_rule(name):
+                logger.info(f"[Rule Filter] System Component: {name}")
+                rule_filtered_count += 1
+                continue
+
+            pre_filtered.append(app)
+
+        logger.info(
+            f"Rule-based Filter: {len(app_list)} → {len(pre_filtered)} "
+            f"({rule_filtered_count} removed)"
+        )
+        print(
+            f"[Rule Filter] {len(app_list)} → {len(pre_filtered)} "
+            f"({rule_filtered_count} system components removed)"
+        )
+
+        if not pre_filtered:
+            logger.info("No user apps remaining after rule filter")
+            return []
+
+        # ───── LAYER 2: AI classification ─────
         classified = []
-        # 10 apps per batch
         batch_size = 10
-        batches = [app_list[i:i+batch_size] for i in range(0, len(app_list), batch_size)]
+        batches = [
+            pre_filtered[i:i + batch_size]
+            for i in range(0, len(pre_filtered), batch_size)
+        ]
 
         for i, batch in enumerate(batches):
-            logger.info(f"Processing batch {i+1}/{len(batches)}")
+            logger.info(f"AI Processing batch {i + 1}/{len(batches)}")
+
             try:
                 result = self._classify_batch(batch)
                 classified.extend(result)
             except Exception as e:
-                logger.error(f"Batch {i+1} classification error: {e}")
-                # Error வந்தா original data return பண்ணும்
+                logger.error(f"Batch {i + 1} classification error: {e}")
+
+                for app in batch:
+                    app['category'] = 'Unknown'
+                    app['risk_level'] = 'Unknown'
+                    app['is_necessary'] = 'Unknown'
+                    app['recommendation'] = 'Unknown'
+                    app['ai_description'] = ''
+                    app['is_system_component'] = False
+
                 classified.extend(batch)
 
-        logger.info(f"Classification complete: {len(classified)} apps")
-        return classified
+        logger.info(f"AI Classification complete: {len(classified)} apps")
+
+        # ───── LAYER 3: Remove AI-flagged system components ─────
+        filtered_apps = []
+        ai_filtered_count = 0
+
+        for app in classified:
+            if app.get('is_system_component', False):
+                logger.info(
+                    f"[AI Filter] System Component: "
+                    f"{app.get('name', 'Unknown')}"
+                )
+                ai_filtered_count += 1
+                continue
+            filtered_apps.append(app)
+
+        logger.info(
+            f"Final Result: {len(app_list)} total → "
+            f"{len(pre_filtered)} after rules → "
+            f"{len(filtered_apps)} after AI "
+            f"(rules removed {rule_filtered_count}, AI removed {ai_filtered_count})"
+        )
+        print(
+            f"[Final] {len(app_list)} → {len(filtered_apps)} real user apps\n"
+        )
+
+        return filtered_apps
 
     def _classify_batch(self, batch):
-        """10 apps-ஐ ஒரே call-ல classify பண்ணும்"""
+        """10 apps-ஐ ஒரே call-ல classify பண்ணும்."""
 
-        # Gemini-க்கு அனுப்பற data prepare பண்ணும்
         apps_data = []
         for app in batch:
             apps_data.append({
@@ -181,30 +378,73 @@ Return format:
             })
 
         prompt = f"""
-You are a Windows software analyst. Analyze these applications and classify each one.
+You are an expert Windows Software Inventory Analyst.
 
-For each app provide:
-1. category: (Development/Security/Media/Office/Gaming/Browser/Utility/Bloatware/Malware/Unknown)
-2. risk_level: (Safe/Low Risk/Suspicious/Dangerous)
-3. is_necessary: (Yes/No/Optional)
-4. recommendation: (Keep/Can Remove/Should Remove/Remove Immediately)
-5. description: (one line - what this app does)
-6. is_system_component: (true/false - is it a Windows system component?)
+Your goal is to identify ONLY genuine user-installed applications.
+
+For each application return:
+1. category
+2. risk_level (Safe / Moderate / High)
+3. is_necessary (Required / Optional / Unnecessary)
+4. recommendation (Keep / Review / Remove)
+5. description (short, 1 line)
+6. is_system_component (true / false)
+
+Set is_system_component = TRUE if application is:
+- Windows built-in component (any Microsoft.Windows.*, MicrosoftWindows.*)
+- Microsoft runtime / framework package (.NET.Native, VCLibs, UI.Xaml, WindowsAppRuntime)
+- UWP system shell (LockApp, ShellExperienceHost, StartMenuExperienceHost)
+- Pre-installed Microsoft Store app (BingNews, BingWeather, Calculator, Notepad,
+  WindowsCamera, ZuneVideo, StickyNotes, Maps, Whiteboard, Todos, Clipchamp,
+  PowerAutomateDesktop, Getstarted, communicationsapps)
+- Image / Media codec extension (HEIF, WebP, AV1, RawImage, WebMedia)
+- Xbox system component (Microsoft.Xbox*)
+- Mixed Reality / Holo component
+- OEM bloatware (HP, Intel, Dell pre-installed)
+- GUID-only package name
+- Driver / background system service
+- Edge browser sub-component (Edge.GameAssist, EdgeDevToolsClient)
+
+Set is_system_component = FALSE only if application is:
+- Genuinely user-downloaded app (Chrome, Firefox, VS Code, Python, Git, Node.js)
+- Third-party productivity software (Office, Adobe, Autodesk)
+- Third-party media app (VLC, Spotify, OBS)
+- Third-party security software (Norton, McAfee, Malwarebytes)
+- Third-party utility (7-Zip, WinRAR, Notepad++)
+- Developer tool (Docker, Postman, GitHub Desktop)
+
+Examples:
+Microsoft.Windows.ContentDeliveryManager → true
+Microsoft.LockApp → true
+Microsoft.WindowsCalculator → true
+Microsoft.BingNews → true
+Microsoft.WindowsTerminal → true
+Clipchamp.Clipchamp → true
+AD2F1837.HPSupportAssistant → true
+Microsoft.UI.Xaml.2.7 → true
+Microsoft.VCLibs.140.00 → true
+
+Visual Studio Code → false
+PythonSoftwareFoundation.Python.3.12 → false
+Google Chrome → false
+GitHub Desktop → false
+VLC media player → false
+7-Zip → false
 
 Apps to analyze:
 {json.dumps(apps_data, indent=2)}
 
-Return ONLY a valid JSON array with same order as input.
-No extra text, no markdown, no code blocks.
-Example format:
+Return ONLY a valid JSON array, no markdown, no code fences.
+
+Example:
 [
   {{
-    "name": "App Name",
+    "name": "Visual Studio Code",
     "category": "Development",
     "risk_level": "Safe",
     "is_necessary": "Optional",
     "recommendation": "Keep",
-    "description": "Code editor",
+    "description": "Source code editor",
     "is_system_component": false
   }}
 ]
@@ -214,27 +454,35 @@ Example format:
             contents=prompt
         )
 
-        response_text = response.text.strip()
+        response_text = self._clean_json_response(response.text)
 
-        # JSON parse பண்ணும்
-        if response_text.startswith('```'):
-            response_text = response_text.split('```')[1]
-            if response_text.startswith('json'):
-                response_text = response_text[4:]
+        print("\n===== GEMINI RESPONSE =====")
+        print(response_text[:500])
+        print("===========================\n")
 
-        ai_results = json.loads(response_text)
+        try:
+            ai_results = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            logger.error(f"Classify JSON parse error: {e}")
+            logger.error(f"Raw response: {response_text[:300]}")
+            ai_results = []
 
-        # Original data + AI results merge பண்ணும்
+        # Merge AI results with original data
         enriched = []
         for j, app in enumerate(batch):
             try:
-                ai_data = ai_results[j]
-                app['category'] = ai_data.get('category', 'Unknown')
-                app['risk_level'] = ai_data.get('risk_level', 'Unknown')
-                app['is_necessary'] = ai_data.get('is_necessary', 'Unknown')
-                app['recommendation'] = ai_data.get('recommendation', 'Unknown')
-                app['ai_description'] = ai_data.get('description', '')
-                app['is_system_component'] = ai_data.get('is_system_component', False)
+                if j < len(ai_results):
+                    ai_data = ai_results[j]
+                    app['category'] = ai_data.get('category', 'Unknown')
+                    app['risk_level'] = ai_data.get('risk_level', 'Unknown')
+                    app['is_necessary'] = ai_data.get('is_necessary', 'Unknown')
+                    app['recommendation'] = ai_data.get('recommendation', 'Unknown')
+                    app['ai_description'] = ai_data.get('description', '')
+                    app['is_system_component'] = ai_data.get(
+                        'is_system_component', False
+                    )
+                else:
+                    raise IndexError("AI result missing for this app")
             except Exception as e:
                 logger.error(f"App merge error: {e}")
                 app['category'] = 'Unknown'
@@ -243,13 +491,16 @@ Example format:
                 app['recommendation'] = 'Unknown'
                 app['ai_description'] = ''
                 app['is_system_component'] = False
+
             enriched.append(app)
 
         return enriched
 
+    # ─────────────────────────────────────────────────────────────────
+    # Utility: Internet check
+    # ─────────────────────────────────────────────────────────────────
     def check_internet(self):
-        """Internet connection check பண்ணும்"""
-        import urllib.request
+        """Internet connection check பண்ணும்."""
         try:
             urllib.request.urlopen('https://www.google.com', timeout=5)
             return True
