@@ -1,127 +1,190 @@
 from dotenv import load_dotenv
 import os
-from logging_module.logger_test import setup_logger
+
+# Core pipeline modules
 from scanners.scanner_manager import ScannerManager
 from ai.gemini_classifier import GeminiClassifier
 from core.deduplication_engine import DeduplicationEngine
 from exports.csv_exporter import CSVExporter
 
-# .env file load பண்ணும்
+# Config system
+from config.settings_loader import SettingsLoader
+from log_config import LogConfig
+from scheduler_utils import start_scheduler
+
+# Load environment variables
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-def main():
-    # Logging setup
-    loggers = setup_logger()
-    app_log = loggers['application']
-    scanner_log = loggers['scanner']
-    ai_log = loggers['ai_processing']
 
-    app_log.info("Application Discovery Tool started")
+# =========================
+# PIPELINE CORE
+# =========================
+def run_pipeline(app_log, scanner_log, ai_log, settings):
 
-    print("=" * 50)
-    print("  Application Discovery - Scanner")
-    print("=" * 50)
+    app_log.info("Pipeline execution started")
 
-    # Step 1: Scanner Manager
+    print("\n" + "=" * 60)
+    print("      SCANIQ - APPLICATION DISCOVERY TOOL")
+    print("=" * 60)
+
+    # =========================
+    # STEP 1: SCANNING
+    # =========================
     manager = ScannerManager()
-    scanner_log.info("All scanners starting...")
+
+    scanner_log.info("Scanner manager started")
+
     results = manager.run_all_scans()
-    scanner_log.info("All scanners completed")
 
-    summary = results['summary']
-    print("\n" + "=" * 50)
-    print("  SCAN COMPLETE - SUMMARY")
-    print("=" * 50)
-    print(f"  Total Apps      : {summary['total_apps']}")
-    print(f"  MSI Apps        : {summary['msi_count']}")
-    print(f"  User Apps       : {summary['user_count']}")
-    print(f"  Store Apps      : {summary['store_count']}")
-    print(f"  Portable Apps   : {summary['portable_count']}")
-    print(f"  Zip Files       : {summary['zip_count']}")
-    print(f"  Browser Exts    : {summary['browser_count']}")
-    print(f"  Deleted Traces  : {summary['deleted_count']}")
-    print(f"  Startup Items   : {summary['startup_count']}")
-    print("=" * 50)
+    scanner_log.info("Scanning completed")
 
-    # Step 2: Rule-based Deduplication (existing)
-    print("\n[Dedup] Removing duplicates...")
+    print("\n[SCAN SUMMARY]")
+    for k, v in results["summary"].items():
+        print(f"  {k:<20}: {v}")
+
+    # =========================
+    # STEP 2: DEDUPLICATION
+    # =========================
+    print("\n[DEDUP] Running rule-based deduplication...")
+
     dedup_engine = DeduplicationEngine()
+
     clean_apps = dedup_engine.deduplicate(results)
+
     dedup_summary = dedup_engine.get_summary(clean_apps)
-    app_log.info(f"Deduplication complete: {dedup_summary['total_unique_apps']} unique apps")
 
-    print("\n" + "=" * 50)
-    print("  DEDUPLICATION COMPLETE")
-    print("=" * 50)
-    print(f"  Unique Apps     : {dedup_summary['total_unique_apps']}")
-    print("=" * 50)
+    app_log.info(
+        f"Dedup completed - Unique apps: "
+        f"{dedup_summary['total_unique_apps']}"
+    )
 
-    # Step 3: Gemini AI
-    print("\n[AI] Gemini starting...")
-    ai_log.info("Gemini starting")
+    print(
+        f"Unique Applications: "
+        f"{dedup_summary['total_unique_apps']}"
+    )
+
+    # =========================
+    # STEP 3: AI PROCESSING
+    # =========================
+    print("\n[AI] Initializing classifier...")
 
     classifier = GeminiClassifier(GEMINI_API_KEY)
-    classified_apps = []
 
     if classifier.check_internet():
-        print("[AI] Internet available — Online mode (Gemini)")
-        ai_log.info("Online mode — Gemini API")
 
-        # Step 3a: AI Deduplication (NEW)
-        print(f"\n[AI Dedup] {len(clean_apps)} apps — AI duplicate filter starting...")
-        ai_log.info(f"AI Deduplication starting: {len(clean_apps)} apps")
+        ai_log.info("AI Mode: Online (Gemini enabled)")
+
+        print("[AI] Online mode enabled")
+
+        print("[AI Dedup] Processing semantic duplicates...")
 
         ai_clean_apps = classifier.deduplicate_apps(clean_apps)
 
-        print("\n" + "=" * 50)
-        print("  AI DEDUPLICATION COMPLETE")
-        print("=" * 50)
-        print(f"  Before AI Dedup : {len(clean_apps)}")
-        print(f"  After AI Dedup  : {len(ai_clean_apps)}")
-        print(f"  Removed         : {len(clean_apps) - len(ai_clean_apps)}")
-        print("=" * 50)
-
-        ai_log.info(f"AI Deduplication complete: {len(clean_apps)} → {len(ai_clean_apps)} apps")
-
-        # Step 3b: AI Classification (existing)
-        print(f"\n[AI] Classifying {len(ai_clean_apps)} apps...")
-        ai_log.info("Gemini classification starting")
+        print(f"After AI dedup: {len(ai_clean_apps)} apps")
 
         classified_apps = classifier.classify_apps(ai_clean_apps)
 
-        print(f"\n[AI] Classification Results (first 5):")
-        for app in classified_apps[:5]:
-            print(f"  - {app.get('name', 'Unknown')}")
-            print(f"    Category    : {app.get('category', 'N/A')}")
-            print(f"    Risk Level  : {app.get('risk_level', 'N/A')}")
-            print(f"    Recommend   : {app.get('recommendation', 'N/A')}")
-            print(f"    Description : {app.get('ai_description', 'N/A')}")
-            print()
-
-        ai_log.info(f"Classification complete: {len(classified_apps)} apps")
-
     else:
-        print("[AI] No internet — Offline mode coming soon (Ollama)")
-        ai_log.warning("No internet — switching to offline mode")
+
+        ai_log.warning("AI Mode: Offline")
+
+        print("[AI] Offline mode - skipping AI classification")
+
         classified_apps = clean_apps
 
-    # Step 4: CSV Export
-    print("\n[Export] Exporting to CSV...")
-    exporter = CSVExporter(output_dir="exports")
-    export_path = exporter.export(classified_apps, filename="Software_Inventory.csv")
-    export_summary = exporter.export_summary(classified_apps)
+    # =========================
+    # STEP 4: EXPORT
+    # =========================
+    print("\n[EXPORT] Creating CSV report...")
 
-    app_log.info(f"CSV exported: {export_path}")
+    exporter = CSVExporter(
+        output_dir=settings.get_export_path()
+    )
 
-    print("\n" + "=" * 50)
-    print("  EXPORT COMPLETE")
-    print("=" * 50)
-    print(f"  Total Exported  : {export_summary['total_exported']}")
-    print("=" * 50)
+    export_path = exporter.export(
+        classified_apps,
+        filename="Software_Inventory.csv"
+    )
 
-    app_log.info("Application Discovery Tool completed")
-    print(f"\n[Done] Software_Inventory.csv ready at: {export_path}")
+    app_log.info(
+        f"Export completed: {export_path}"
+    )
+
+    print(
+        f"\nDONE → Report generated at:\n{export_path}"
+    )
+
+    app_log.info(
+        "Pipeline completed successfully"
+    )
+
+
+# =========================
+# MAIN ENTRY
+# =========================
+def main():
+
+    # Load settings
+    settings = SettingsLoader()
+
+    # Setup logging
+    log_manager = LogConfig(settings)
+
+    logger_dict = log_manager.setup_logging()
+
+    print("Logger Keys:", logger_dict.keys())
+
+    app_log = logger_dict["application"]
+    scanner_log = logger_dict["scanner"]
+    ai_log = logger_dict["ai_processing"]
+
+    app_log.info("SCANIQ system initialized")
+
+    export_path = settings.get_export_path()
+    scan_time = settings.get_scan_time()
+
+    app_log.info(f"Export path: {export_path}")
+    app_log.info(f"Scan time configured: {scan_time}")
+
+    print("\nSYSTEM READY")
+    print(f"Export Path : {export_path}")
+    print(f"Scan Time   : {scan_time}")
+
+    app_log.info("Application logger working")
+    scanner_log.info("Scanner logger working")
+    ai_log.info("AI logger working")
+
+    mode = (
+        settings.get_mode()
+        if hasattr(settings, "get_mode")
+        else "manual"
+    )
+
+    if mode.lower() == "scheduled":
+
+        app_log.info("Running in scheduled mode")
+
+        start_scheduler(
+            settings,
+            lambda: run_pipeline(
+                app_log,
+                scanner_log,
+                ai_log,
+                settings
+            )
+        )
+
+    else:
+
+        app_log.info("Running in manual mode")
+
+        run_pipeline(
+            app_log,
+            scanner_log,
+            ai_log,
+            settings
+        )
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,8 @@
+{
+  "LogKey": {
+    "LogType": 1,
+    "Days": 7
+  },
+  "ExportFolderPath": "exports/",
+  "ScanTime": "11:00"
+}

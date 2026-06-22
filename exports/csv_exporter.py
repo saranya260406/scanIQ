@@ -1,18 +1,37 @@
 import csv
 import os
+import re
 import logging
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-SKIP_SOURCES = []  # எதுவும் skip வேண்டாம்
-
 
 class CSVExporter:
+
+    # These sources = raw files, not installed apps — skip
+    SKIP_SOURCES = ['ZipFile', 'RealTimeDownload']
+
+    # Names matching these = junk — skip
+    SKIP_NAME_PATTERNS = [
+        r'^[a-z]{20,}$',                          # random lowercase IDs (browser ext)
+        r'^[a-zA-Z0-9]{30,}$',                    # long random alphanumeric
+        r'^Microsoft(Edge|Copilot)AutoLaunch_.*', # Microsoft auto-launch junk
+        r'^ModifiableWindowsApps$',
+        r'^Uninstall Information$',
+        r'^SecurityHealth$',
+        r'^desktop$',
+    ]
+
+    # File extensions = not an app — skip
+    SKIP_EXTENSIONS = {'.exe', '.msi', '.zip', '.rar', '.7z', '.appx', '.msix'}
 
     def __init__(self, output_dir: str = "exports"):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
+        self._compiled_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.SKIP_NAME_PATTERNS
+        ]
 
     def export(self, app_list: list, filename: str = None) -> dict:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -25,20 +44,14 @@ class CSVExporter:
         self._write_csv(all_fpath, filtered)
 
         print(f"[Export] ✓ ALL drives → {len(filtered)} apps → {all_fpath}")
-        print(f"[Export]   {skipped_count} installer files skipped")
+        print(f"[Export]   {skipped_count} entries skipped")
 
         return {'ALL': all_fpath}
 
     def _write_csv(self, filepath: str, apps: list):
         fieldnames = [
-            'Name',
-            'Publisher',
-            'Version',
-            'Installed On',
-            'Size',
-            'Install Location',
-            'Drive',
-            'Source',
+            'Name', 'Publisher', 'Version',
+            'Installed On', 'Size', 'Install Location', 'Drive', 'Source',
         ]
         try:
             with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
@@ -67,12 +80,26 @@ class CSVExporter:
         filtered = []
         skipped  = 0
         for app in app_list:
+            # 1. Source filter — skip raw files
             sources = app.get('sources', [app.get('source', '')])
             if isinstance(sources, str):
                 sources = [sources]
-            if any(skip.lower() in src.lower() for src in sources for skip in SKIP_SOURCES):
+            if any(skip.lower() in src.lower() for src in sources for skip in self.SKIP_SOURCES):
                 skipped += 1
                 continue
+
+            # 2. Name filter — skip if name ends with exe/zip etc.
+            name = (app.get('name') or app.get('app_name') or '').strip()
+            ext = os.path.splitext(name)[1].lower()
+            if ext in self.SKIP_EXTENSIONS:
+                skipped += 1
+                continue
+
+            # 3. Pattern filter — skip random IDs and junk names
+            if any(p.match(name) for p in self._compiled_patterns):
+                skipped += 1
+                continue
+
             filtered.append(app)
         return filtered, skipped
 

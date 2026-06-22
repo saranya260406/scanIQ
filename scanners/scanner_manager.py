@@ -8,23 +8,22 @@ from scanners.browser_app_scanner import BrowserAppScanner
 from scanners.deleted_trace_scanner import DeletedTraceScanner
 from scanners.startup_scanner import StartupScanner
 from scanners.metadata_extractor import MetadataExtractor
-# PortableScanner — disabled (scans all files, too slow)
-# from scanners.portable_scanner import PortableScanner
+from scanners.portable_scanner import PortableScanner
 
 logger = logging.getLogger(__name__)
 
 class ScannerManager:
 
     def __init__(self):
-        self.msi_scanner      = MSIScanner()
-        self.user_scanner     = UserAppScanner()
-        self.store_scanner    = StoreScanner()
-        self.zip_scanner      = ZipScanner()
-        self.browser_scanner  = BrowserAppScanner()
-        self.deleted_scanner  = DeletedTraceScanner()
-        self.startup_scanner  = StartupScanner()
+        self.msi_scanner        = MSIScanner()
+        self.user_scanner       = UserAppScanner()
+        self.store_scanner      = StoreScanner()
+        self.zip_scanner        = ZipScanner()
+        self.browser_scanner    = BrowserAppScanner()
+        self.deleted_scanner    = DeletedTraceScanner()
+        self.startup_scanner    = StartupScanner()
         self.metadata_extractor = MetadataExtractor()
-        # self.portable_scanner = PortableScanner()  # disabled
+        self.portable_scanner   = PortableScanner()
 
     def _extract_drive(self, path: str):
         if not path:
@@ -59,9 +58,9 @@ class ScannerManager:
         results['store_apps'] = self._add_drive_column(self.store_scanner.scan())
         print(f"    ✓ {len(results['store_apps'])} Store apps found")
 
-        # [4] Portable Apps — DISABLED (too slow, scans all files)
-        results['portable_apps'] = []
-        print("[4] Portable Apps — SKIPPED (disabled for speed)")
+        print("[4] Portable Apps Scanning (D: drive folders)...")
+        results['portable_apps'] = self._add_drive_column(self.portable_scanner.scan())
+        print(f"    ✓ {len(results['portable_apps'])} Portable folders found")
 
         print("[5] Zip / Setup Files Scanning...")
         results['zip_files'] = self._add_drive_column(self.zip_scanner.scan())
@@ -75,7 +74,6 @@ class ScannerManager:
         results['deleted_traces'] = self._add_drive_column(self.deleted_scanner.scan())
         print(f"    ✓ {len(results['deleted_traces'])} Traces found")
 
-    
         print("[8] Startup Items Scanning...")
         results['startup_items'] = self._add_drive_column(self.startup_scanner.scan())
         print(f"    ✓ {len(results['startup_items'])} Startup items found")
@@ -84,6 +82,9 @@ class ScannerManager:
         results['msi_apps'] = self.metadata_extractor.extract(results['msi_apps'])
         results['msi_apps'] = self._add_drive_column(results['msi_apps'])
         print(f"    ✓ Metadata extracted for {len(results['msi_apps'])} apps")
+
+        results['processes'] = []
+        results['services']  = []
 
         results['summary'] = self._generate_summary(results)
         return results
@@ -100,7 +101,7 @@ class ScannerManager:
             'msi_count':      len(results.get('msi_apps', [])),
             'user_count':     len(results.get('user_apps', [])),
             'store_count':    len(results.get('store_apps', [])),
-            'portable_count': 0,
+            'portable_count': len(results.get('portable_apps', [])),
             'zip_count':      len(results.get('zip_files', [])),
             'browser_count':  len(results.get('browser_apps', [])),
             'deleted_count':  len(results.get('deleted_traces', [])),
