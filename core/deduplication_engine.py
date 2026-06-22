@@ -4,26 +4,17 @@ import re
 logger = logging.getLogger(__name__)
 
 class DeduplicationEngine:
-    """
-    Rule-based deduplication:
-    - Same name + same version → merge (sources combine aagum)
-    - Name normalize panni compare pannும் (case, spaces, special chars)
-    """
 
     def deduplicate(self, results: dict) -> list:
         all_apps = []
 
         source_map = {
-            'msi_apps':       'MSI',
-            'user_apps':      'UserApp',
-            'store_apps':     'StoreApp',
-            'portable_apps':  'Portable',
-            'zip_files':      'ZipFile',
-            'browser_apps':   'BrowserExtension',
-            'deleted_traces': 'DeletedTrace',
-            'processes':      'Process',
-            'services':       'Service',
-            'startup_items':  'Startup',
+            'msi_apps':      'MSI',
+            'user_apps':     'UserApp',
+            'store_apps':    'StoreApp',
+            'portable_apps': 'Portable',
+            'zip_files':     'ZipFile',
+            'browser_apps':  'BrowserExtension',
         }
 
         for key, source_label in source_map.items():
@@ -33,7 +24,6 @@ class DeduplicationEngine:
 
         logger.info(f"Total before dedup: {len(all_apps)}")
 
-        # Name + version key ile group pannuven
         seen: dict[str, dict] = {}
 
         for app in all_apps:
@@ -42,7 +32,6 @@ class DeduplicationEngine:
             key     = f"{name}||{version}"
 
             if key in seen:
-                # Merge: sources list update pannuven
                 existing = seen[key]
                 existing_sources = existing.get('sources', [existing.get('source', '')])
                 new_source       = app.get('source', '')
@@ -50,7 +39,6 @@ class DeduplicationEngine:
                     existing_sources.append(new_source)
                 existing['sources'] = existing_sources
 
-                # install_location update pannuven (better path prefer)
                 if (not existing.get('install_location') or
                         existing.get('install_location') == 'Unknown'):
                     loc = app.get('install_location', '')

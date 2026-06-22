@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,6 @@ class BrowserAppScanner:
                 ext_folder = os.path.join(extensions_path, ext_id)
                 if not os.path.isdir(ext_folder):
                     continue
-                # Version folders scan
                 for version_folder in os.listdir(ext_folder):
                     manifest_path = os.path.join(ext_folder, version_folder, 'manifest.json')
                     if os.path.exists(manifest_path):
@@ -55,10 +55,21 @@ class BrowserAppScanner:
         try:
             with open(manifest_path, 'r', encoding='utf-8') as f:
                 manifest = json.load(f)
-            name = manifest.get('name', 'Unknown')
-            # __MSG_ format names skip பண்ணும்
+
+            name = manifest.get('name', '')
+
+            # __MSG_ format skip
             if name.startswith('__MSG_'):
-                name = manifest.get('short_name', ext_id)
+                name = manifest.get('short_name', '')
+
+            # Readable name இல்லன்னா skip — random ID-like names filter
+            if not name or name.startswith('__MSG_'):
+                return None
+
+            # Pure random ID (எல்லாம் lowercase letters மட்டும், 20+ chars) skip
+            if re.match(r'^[a-z]{20,}$', name):
+                return None
+
             return {
                 'name': name,
                 'version': manifest.get('version', 'Unknown'),
