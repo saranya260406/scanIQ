@@ -161,7 +161,7 @@ def main():
         else "manual"
     )
 
-    if mode.lower() == "scheduled":
+    if mode.lower() == "schedule":
 
         app_log.info("Running in scheduled mode")
 
