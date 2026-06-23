@@ -1,5 +1,5 @@
 {
-  "Mode": "scheduled",
+  "Mode": "manual",
   "LogKey": {
     "LogType": 1,
     "Days": 7

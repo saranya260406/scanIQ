@@ -43,7 +43,6 @@ class PortableScanner:
     def _scan_top_level_folders(self, drive_path):
         apps = []
 
-        # C: drive-க்கு extra skip folders
         skip = self.SKIP_DRIVES_FOLDERS.get(drive_path, self.SKIP_FOLDERS)
 
         try:
@@ -55,15 +54,17 @@ class PortableScanner:
                 if item in skip or item.startswith('$'):
                     continue
 
-                # Folder-ல இருக்கற main .exe மட்டும் pick பண்ணும்
                 main_exe = self._find_main_exe(full_path, item)
+
+                if not main_exe:
+                    continue
 
                 apps.append({
                     'name': item,
                     'publisher': 'Unknown',
                     'version': 'Unknown',
                     'install_location': full_path,
-                    'exe_path': main_exe or '',
+                    'exe_path': main_exe,
                     'size_mb': None,
                     'type': 'Portable',
                     'source': 'portable'
@@ -85,13 +86,11 @@ class PortableScanner:
             if not exes:
                 return None
 
-            # Folder பேருக்கு close-ஆ இருக்கற exe prefer பண்ணும்
             folder_lower = folder_name.lower()
             for exe in exes:
                 if folder_lower in exe.lower() or exe.lower().replace('.exe', '') in folder_lower:
                     return os.path.join(folder_path, exe)
 
-            # Match இல்லன்னா first exe return பண்ணும்
             return os.path.join(folder_path, exes[0])
 
         except Exception:
