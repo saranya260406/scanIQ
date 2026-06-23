@@ -8,38 +8,53 @@ class BrowserAppScanner:
 
     def scan(self):
         extensions = []
-        extensions.extend(self._scan_chrome())
-        extensions.extend(self._scan_edge())
+        # All users-ஐ scan பண்ணும்
+        for user_path in self._get_all_user_paths():
+            extensions.extend(self._scan_chrome(user_path))
+            extensions.extend(self._scan_edge(user_path))
         logger.info(f"Browser App Scanner: {len(extensions)} extensions found")
         return extensions
 
-    def _scan_chrome(self):
-        extensions = []
-        chrome_path = os.path.expanduser(
-            r"~\AppData\Local\Google\Chrome\User Data\Default\Extensions"
-        )
-        extensions.extend(self._scan_browser_extensions(chrome_path, 'Chrome'))
-        return extensions
+    def _get_all_user_paths(self):
+        """Get all user profile paths from C drive"""
+        user_paths = []
+        users_dir = r"C:\Users"
+        skip_folders = {'Public', 'Default', 'Default User', 'All Users'}
+        try:
+            for user in os.listdir(users_dir):
+                if user in skip_folders:
+                    continue
+                full_path = os.path.join(users_dir, user)
+                if os.path.isdir(full_path):
+                    user_paths.append(full_path)
+        except Exception as e:
+            logger.error(f"Users folder scan error: {e}")
+        return user_paths
 
-    def _scan_edge(self):
-        extensions = []
-        edge_path = os.path.expanduser(
-            r"~\AppData\Local\Microsoft\Edge\User Data\Default\Extensions"
+    def _scan_chrome(self, user_path):
+        chrome_path = os.path.join(
+            user_path,
+            r"AppData\Local\Google\Chrome\User Data\Default\Extensions"
         )
-        extensions.extend(self._scan_browser_extensions(edge_path, 'Edge'))
-        return extensions
+        return self._scan_browser_extensions(chrome_path, 'Chrome')
+
+    def _scan_edge(self, user_path):
+        edge_path = os.path.join(
+            user_path,
+            r"AppData\Local\Microsoft\Edge\User Data\Default\Extensions"
+        )
+        return self._scan_browser_extensions(edge_path, 'Edge')
 
     def _scan_browser_extensions(self, extensions_path, browser_name):
         extensions = []
         if not os.path.exists(extensions_path):
-            logger.warning(f"{browser_name} extensions path not found")
+            logger.warning(f"{browser_name} extensions path not found: {extensions_path}")
             return extensions
         try:
             for ext_id in os.listdir(extensions_path):
                 ext_folder = os.path.join(extensions_path, ext_id)
                 if not os.path.isdir(ext_folder):
                     continue
-                # Version folders scan
                 for version_folder in os.listdir(ext_folder):
                     manifest_path = os.path.join(ext_folder, version_folder, 'manifest.json')
                     if os.path.exists(manifest_path):
@@ -56,7 +71,6 @@ class BrowserAppScanner:
             with open(manifest_path, 'r', encoding='utf-8') as f:
                 manifest = json.load(f)
             name = manifest.get('name', 'Unknown')
-            # __MSG_ format names skip பண்ணும்
             if name.startswith('__MSG_'):
                 name = manifest.get('short_name', ext_id)
             return {

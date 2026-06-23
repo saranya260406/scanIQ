@@ -1,9 +1,8 @@
 {
-  "Mode": "manual",
-  "LogKey": {
-    "LogType": 1,
-    "Days": 7
-  },
-  "ExportFolderPath": "exports/",
-  "ScanTime": "11:00"
+    "Mode": "manual",
+    "ScanTime": "08:00",
+    "ExportFolderPath": "C:\\Users\\SARANYA\\OneDrive\\Documents\\ApplicationDiscoveryProject\\exports\\",
+    "LogKey": {
+        "LogFolderPath": "C:\\Users\\SARANYA\\OneDrive\\Documents\\ApplicationDiscoveryProject\\logs\\"
+    }
 }

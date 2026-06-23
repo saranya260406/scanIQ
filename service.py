@@ -28,7 +28,7 @@ from scheduler_utils import start_scheduler
 class ScanIQService(win32serviceutil.ServiceFramework):
 
     _svc_name_ = "scanIQ"
-    _svc_display_name_ = "scanIQ Application Discovery"
+    _svc_display_name_ = "scanIQ"
     _svc_description_ = "ScanIQ - Windows Application Discovery Tool"
 
     def __init__(self, args):
