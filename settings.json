@@ -1,8 +1,9 @@
 {
-    "Mode": "manual",
-    "ScanTime": "08:00",
-    "ExportFolderPath": "D:\\Testing20260623\\",
-    "LogKey": {
-        "LogFolderPath": "D:\\Testing20260623\\Logs"
-    }
+  "Mode": "scheduled",
+  "LogKey": {
+    "LogType": 1,
+    "Days": 7
+  },
+  "ExportFolderPath": "D:\\Testing20260623\\",
+  "ScanTime": "11:00"
 }
