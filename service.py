@@ -2,15 +2,14 @@ import win32serviceutil
 import win32service
 import win32event
 import servicemanager
-import socket
 import sys
 import os
 import logging
+import threading
 
 # Project path
 PROJECT_PATH = r"C:\Users\SARANYA\OneDrive\Documents\ApplicationDiscoveryProject"
 
-# Add project to path
 sys.path.insert(0, PROJECT_PATH)
 
 from dotenv import load_dotenv
@@ -23,6 +22,12 @@ from exports.csv_exporter import CSVExporter
 from config.settings_loader import SettingsLoader
 from log_config import LogConfig
 from scheduler_utils import start_scheduler
+from realtime_watcher import FileWatchHandler, get_all_drives
+
+try:
+    from watchdog.observers import Observer
+except ImportError:
+    Observer = None
 
 
 class ScanIQService(win32serviceutil.ServiceFramework):
@@ -35,6 +40,7 @@ class ScanIQService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
+        self.observer = None
 
         logging.basicConfig(
             filename=os.path.join(PROJECT_PATH, "service.log"),
@@ -48,6 +54,8 @@ class ScanIQService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.hWaitStop)
         self.running = False
+        if self.observer:
+            self.observer.stop()
 
     def SvcDoRun(self):
         self.logger.info("ScanIQ Service started")
@@ -72,6 +80,25 @@ class ScanIQService(win32serviceutil.ServiceFramework):
 
             GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+            # =========================
+            # REALTIME WATCHER START
+            # =========================
+            if Observer:
+                self.observer = Observer()
+                handler = FileWatchHandler()
+                for drive in get_all_drives():
+                    try:
+                        self.observer.schedule(handler, drive, recursive=True)
+                    except Exception as e:
+                        self.logger.error(f"Could not watch {drive}: {e}")
+                self.observer.start()
+                app_log.info("RealTime Watcher started")
+            else:
+                app_log.warning("watchdog not installed - RealTime Watcher skipped")
+
+            # =========================
+            # PIPELINE RUN
+            # =========================
             mode = (
                 settings.get_mode()
                 if hasattr(settings, "get_mode")
@@ -87,14 +114,21 @@ class ScanIQService(win32serviceutil.ServiceFramework):
                         settings, GEMINI_API_KEY
                     )
                 )
-                # Scheduler running-ஆ இருக்கும் வரை wait பண்ணு
                 win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
             else:
                 app_log.info("Service: Running in manual mode")
-                self._run_pipeline(
-                    app_log, scanner_log, ai_log,
-                    settings, GEMINI_API_KEY
+                # Pipeline thread-ல் run பண்ணு — watcher background-ல் இருக்கும்
+                pipeline_thread = threading.Thread(
+                    target=self._run_pipeline,
+                    args=(app_log, scanner_log, ai_log, settings, GEMINI_API_KEY),
+                    daemon=True
                 )
+                pipeline_thread.start()
+                # Watcher running-ஆ இருக்கும் வரை wait பண்ணு
+                win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
+
+            if self.observer:
+                self.observer.join()
 
         except Exception as e:
             self.logger.error(f"Service error: {e}")
@@ -136,3 +170,4 @@ if __name__ == "__main__":
         servicemanager.StartServiceCtrlDispatcher()
     else:
         win32serviceutil.HandleCommandLine(ScanIQService)
+    
