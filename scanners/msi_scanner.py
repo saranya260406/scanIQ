@@ -5,12 +5,17 @@ import os
 
 logger = logging.getLogger(__name__)
 
-class MSIScanner:
+# Unga SARANYA account-oda SID - 'whoami /user' la kitta output
+USER_SID = r"S-1-5-21-1456990233-2880578857-2040869081-1001"
 
+
+class MSIScanner:
     REGISTRY_PATHS = [
         (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
         (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
-        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        # HKEY_CURRENT_USER thavira, HKEY_USERS\<SID> mela direct point pannurom
+        # Service LocalSystem-la run aanalum, idhu correct user profile-ah padikkum
+        (winreg.HKEY_USERS, USER_SID + r"\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
     ]
 
     def scan(self):
@@ -38,11 +43,10 @@ class MSIScanner:
                     continue
             winreg.CloseKey(registry_key)
         except Exception as e:
-            logger.error(f"Registry read error: {e}")
+            logger.error(f"Registry read error ({path}): {e}")
         return apps
 
     def _extract_app_info(self, subkey):
-
         def get_value(key, name):
             try:
                 return winreg.QueryValueEx(key, name)[0]
@@ -58,10 +62,8 @@ class MSIScanner:
         if system_component == 1:
             return None
 
-        # No uninstall string = inbuilt component, skip
+        # uninstall_string illama irundhalum include pannurom (Control Panel apps full ah varanum)
         uninstall_string = get_value(subkey, 'UninstallString') or ''
-        if not uninstall_string:
-            return None
 
         raw_date = get_value(subkey, 'InstallDate')
         install_date = self._parse_date(raw_date)
@@ -70,7 +72,6 @@ class MSIScanner:
         size_mb = round(size_kb / 1024, 2) if size_kb else None
 
         install_location = get_value(subkey, 'InstallLocation')
-
         if not install_location and uninstall_string:
             try:
                 cleaned = uninstall_string.replace('"', '')
@@ -80,7 +81,6 @@ class MSIScanner:
                     install_location = os.path.dirname(exe_path)
             except Exception:
                 pass
-
         if not install_location:
             install_location = "Unknown"
 

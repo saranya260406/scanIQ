@@ -7,8 +7,11 @@ import os
 import logging
 import threading
 
-# Project path
-PROJECT_PATH = r"C:\Users\SARANYA\OneDrive\Documents\ApplicationDiscoveryProject"
+# Dynamic path
+if getattr(sys, 'frozen', False):
+    PROJECT_PATH = os.path.dirname(sys.executable)
+else:
+    PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.insert(0, PROJECT_PATH)
 
@@ -41,6 +44,7 @@ class ScanIQService(win32serviceutil.ServiceFramework):
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
         self.observer = None
+        self.stop_event = threading.Event()
 
         logging.basicConfig(
             filename=os.path.join(PROJECT_PATH, "service.log"),
@@ -54,6 +58,7 @@ class ScanIQService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.hWaitStop)
         self.running = False
+        self.stop_event.set()
         if self.observer:
             self.observer.stop()
 
@@ -80,12 +85,14 @@ class ScanIQService(win32serviceutil.ServiceFramework):
 
             GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-            # =========================
-            # REALTIME WATCHER START
-            # =========================
+            # RealTime Watcher
             if Observer:
                 self.observer = Observer()
-                handler = FileWatchHandler()
+                handler = FileWatchHandler(
+    scan_callback=lambda: self._run_pipeline(
+        app_log, scanner_log, ai_log, settings, GEMINI_API_KEY
+    )
+)
                 for drive in get_all_drives():
                     try:
                         self.observer.schedule(handler, drive, recursive=True)
@@ -96,35 +103,37 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             else:
                 app_log.warning("watchdog not installed - RealTime Watcher skipped")
 
-            # =========================
-            # PIPELINE RUN
-            # =========================
+            # Pipeline
             mode = (
                 settings.get_mode()
                 if hasattr(settings, "get_mode")
                 else "manual"
             )
 
-            if mode.lower() == "schedule":
+            if mode.lower() == "scheduled":
                 app_log.info("Service: Running in scheduled mode")
+
+                # Scheduler thread - stop_event மூலம் gracefully stop ஆகும்
                 start_scheduler(
                     settings,
                     lambda: self._run_pipeline(
                         app_log, scanner_log, ai_log,
                         settings, GEMINI_API_KEY
-                    )
+                    ),
+                    self.stop_event
                 )
+
+                # Service stop signal வரும் வரை wait பண்ணு
                 win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
+
             else:
                 app_log.info("Service: Running in manual mode")
-                # Pipeline thread-ல் run பண்ணு — watcher background-ல் இருக்கும்
                 pipeline_thread = threading.Thread(
                     target=self._run_pipeline,
                     args=(app_log, scanner_log, ai_log, settings, GEMINI_API_KEY),
                     daemon=True
                 )
                 pipeline_thread.start()
-                # Watcher running-ஆ இருக்கும் வரை wait பண்ணு
                 win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
 
             if self.observer:
@@ -147,8 +156,7 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             classifier = GeminiClassifier(GEMINI_API_KEY)
 
             if classifier.check_internet():
-                ai_clean_apps = classifier.deduplicate_apps(clean_apps)
-                classified_apps = classifier.classify_apps(ai_clean_apps)
+                classified_apps = classifier.classify_apps(clean_apps)
                 ai_log.info("AI classification done")
             else:
                 classified_apps = clean_apps
@@ -170,4 +178,3 @@ if __name__ == "__main__":
         servicemanager.StartServiceCtrlDispatcher()
     else:
         win32serviceutil.HandleCommandLine(ScanIQService)
-    

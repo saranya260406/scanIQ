@@ -1,46 +1,68 @@
 import json
 import os
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsLoader:
 
     DEFAULTS = {
-        "Mode": "manual",
+        "Mode": "scheduled",  # CHANGED: Default to scheduled
         "LogKey": {
             "LogType": 1,
             "Days": 2
         },
         "ExportFolderPath": "exports/",
-        "ScanTime": "10:00"
+        "ScanTime": "11:45"  # CHANGED: Default to 11:45
     }
 
-    def __init__(self, path="settings.json"):
-        self.path = path
+    def __init__(self, path=None):
+        # If no path provided, find settings.json in project directory
+        if path is None:
+            if getattr(sys, 'frozen', False):
+                # Running as EXE
+                project_path = os.path.dirname(sys.executable)
+            else:
+                # Running as script
+                project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            path = os.path.join(project_path, "settings.json")
+        
+        self.path = os.path.abspath(path)
         self.config = self._load()
         self.config = self._validate(self.config)
 
     # ---------------- LOAD ----------------
     def _load(self):
         if not os.path.exists(self.path):
+            logger.warning(f"Settings file not found: {self.path}. Using defaults.")
             return {}
 
         try:
             with open(self.path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                logger.info(f"Settings loaded from: {self.path}")
                 return data if isinstance(data, dict) else {}
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error loading settings from {self.path}: {e}. Using defaults.")
             return {}
 
     # ---------------- VALIDATE ----------------
     def _validate(self, cfg):
-
         base = self.DEFAULTS.copy()
         base.update(cfg)
         cfg = base
+        
+        logger.info(f"Settings validation - Mode: {cfg.get('Mode')}, ScanTime: {cfg.get('ScanTime')}, ExportPath: {cfg.get('ExportFolderPath')}")
 
         # ---------------- MODE ----------------
-        if cfg.get("Mode") not in ["scheduled", "manual"]:
-            cfg["Mode"] = self.DEFAULTS["Mode"]
+        mode = cfg.get("Mode", "scheduled").strip().lower()
+        if mode not in ["scheduled", "manual"]:
+            mode = self.DEFAULTS["Mode"]
+        cfg["Mode"] = mode
+        logger.debug(f"Mode set to: {mode}")
 
         # ---------------- LOGKEY ----------------
         log = cfg.get("LogKey", {})
@@ -74,14 +96,17 @@ class SettingsLoader:
         os.makedirs(export_path, exist_ok=True)
 
         cfg["ExportFolderPath"] = export_path
+        logger.debug(f"Export path set to: {export_path}")
 
         # ---------------- SCAN TIME ----------------
-        scan_time = cfg.get("ScanTime")
+        scan_time = str(cfg.get("ScanTime", "")).strip()
 
         if not self._safe_time(scan_time):
             scan_time = self.DEFAULTS["ScanTime"]
-
+            logger.warning(f"Invalid ScanTime provided. Using default: {scan_time}")
+        
         cfg["ScanTime"] = scan_time
+        logger.debug(f"Scan time set to: {scan_time}")
 
         return cfg
 
@@ -128,14 +153,19 @@ class SettingsLoader:
 
         try:
             if not isinstance(t, str):
+                logger.debug(f"Time validation failed: not a string - {type(t)}")
                 return False
 
             h, m = t.split(":")
             h, m = int(h), int(m)
+            
+            is_valid = 0 <= h <= 23 and 0 <= m <= 59
+            if not is_valid:
+                logger.debug(f"Time out of range: {t}")
+            return is_valid
 
-            return 0 <= h <= 23 and 0 <= m <= 59
-
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Time parse error for '{t}': {e}")
             return False
 
     # ---------------- GETTERS ----------------

@@ -3,73 +3,77 @@ import json
 import time
 import logging
 import threading
-from datetime import datetime, timedelta
+import schedule
+from datetime import datetime
+import os
 
 import win32serviceutil
 import win32service
 import win32event
 import servicemanager
 
-from logging_module.logger_test import setup_logger
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
+from config.settings_loader import SettingsLoader
+from log_config import LogConfig
 from scanners.scanner_manager import ScannerManager
 from ai.gemini_classifier import GeminiClassifier
 from core.deduplication_engine import DeduplicationEngine
 from exports.csv_exporter import CSVExporter
 
-# ─── Config Load ───────────────────────────────────────────
-def load_config():
-    try:
-        with open('config.json', 'r') as f:
-            return json.load(f)
-    except Exception:
-        return {
-            "scan_interval_hours": 24,
-            "output_dir": "exports",
-            "gemini_api_key": "",
-            "max_apps_to_classify": 20
-        }
+
+# ─── Settings Load (settings.json) ─────────────────────────
+def load_settings():
+    return SettingsLoader()
+
 
 # ─── Core Scan Logic ───────────────────────────────────────
 def run_scan():
-    config = load_config()
-    loggers = setup_logger()
-    app_log = loggers['application']
-    scanner_log = loggers['scanner']
-    ai_log = loggers['ai_processing']
+    settings = load_settings()
+    log_manager = LogConfig(settings)
+    logger_dict = log_manager.setup_logging()
+    
+    app_log = logger_dict["application"]
+    scanner_log = logger_dict["scanner"]
+    ai_log = logger_dict["ai_processing"]
+    
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
     app_log.info(f"Scan started at {datetime.now()}")
-    print(f"\n[{datetime.now()}] Scan starting...")
 
-    # Step 1: Scan
-    manager = ScannerManager()
-    scanner_log.info("All scanners starting...")
-    results = manager.run_all_scans()
-    scanner_log.info("All scanners completed")
+    try:
+        # Step 1: Scan
+        manager = ScannerManager()
+        scanner_log.info("All scanners starting...")
+        results = manager.run_all_scans()
+        scanner_log.info("All scanners completed")
 
-    # Step 2: Deduplicate
-    dedup_engine = DeduplicationEngine()
-    clean_apps = dedup_engine.deduplicate(results)
-    app_log.info(f"Deduplication: {len(clean_apps)} unique apps")
+        # Step 2: Deduplicate
+        dedup_engine = DeduplicationEngine()
+        clean_apps = dedup_engine.deduplicate(results)
+        app_log.info(f"Deduplication: {len(clean_apps)} unique apps")
 
-    # Step 3: AI Classify
-    classifier = GeminiClassifier(config['gemini_api_key'])
-    ai_log.info("Classification starting")
+        # Step 3: AI Classify
+        classifier = GeminiClassifier(GEMINI_API_KEY)
+        ai_log.info("Classification starting")
+        if classifier.check_internet():
+            ai_clean_apps = classifier.deduplicate_apps(clean_apps)
+            classified_apps = classifier.classify_apps(ai_clean_apps)
+            ai_log.info(f"Classification complete: {len(classified_apps)} apps")
+        else:
+            ai_log.warning("No internet — skipping AI classification")
+            classified_apps = clean_apps
 
-    if classifier.check_internet():
-        max_apps = config.get('max_apps_to_classify', 20)
-        classified_apps = classifier.classify_apps(clean_apps[:max_apps])
-        ai_log.info(f"Classification complete: {len(classified_apps)} apps")
-    else:
-        ai_log.warning("No internet — skipping AI classification")
-        classified_apps = clean_apps
+        # Step 4: Export CSV
+        exporter = CSVExporter(output_dir=settings.get_export_path())
+        export_path = exporter.export(classified_apps, filename="Software_Inventory.csv")
+        
+        app_log.info(f"Scan complete. CSV exported successfully")
+        
+    except Exception as e:
+        app_log.error(f"Scan error: {e}")
 
-    # Step 4: Export CSV
-    exporter = CSVExporter(output_dir=config.get('output_dir', 'exports'))
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    export_path = exporter.export(classified_apps, filename=f"Software_Inventory_{timestamp}.csv")
-
-    app_log.info(f"Scan complete. CSV: {export_path}")
-    print(f"[{datetime.now()}] Scan complete → {export_path}")
 
 # ─── Windows Service Class ─────────────────────────────────
 class AppDiscoveryService(win32serviceutil.ServiceFramework):
@@ -81,6 +85,13 @@ class AppDiscoveryService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.stop_event = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
+        
+        # Setup basic logging
+        logging.basicConfig(
+            filename="service.log",
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
@@ -98,27 +109,20 @@ class AppDiscoveryService(win32serviceutil.ServiceFramework):
         self._run_scheduler()
 
     def _run_scheduler(self):
-        config = load_config()
-        interval_hours = config.get('scan_interval_hours', 24)
+        settings = load_settings()
+        scan_time = settings.get_scan_time()
 
-        logging.info(f"Scheduler: scan every {interval_hours} hours")
+        logging.info(f"Scheduler: daily CSV export at {scan_time}")
+        print(f"[SCHEDULER] Service running. Daily CSV export time: {scan_time}")
 
-        # Service start ஆனவுடனே ஒரு முறை scan பண்ணும்
-        self._run_scan_thread()
-
-        next_scan = datetime.now() + timedelta(hours=interval_hours)
+        # Schedule the job - CSV will be exported ONLY at the scheduled time
+        schedule.every().day.at(scan_time).do(self._run_scan_thread)
 
         while self.running:
-            now = datetime.now()
-            if now >= next_scan:
-                self._run_scan_thread()
-                config = load_config()
-                interval_hours = config.get('scan_interval_hours', 24)
-                next_scan = datetime.now() + timedelta(hours=interval_hours)
-                logging.info(f"Next scan scheduled at: {next_scan}")
-
-            # 60 seconds wait பண்ணி check பண்ணும்
-            win32event.WaitForSingleObject(self.stop_event, 60000)
+            schedule.run_pending()
+            # Check every 30 seconds, respect stop_event
+            if win32event.WaitForSingleObject(self.stop_event, 30000) == win32event.WAIT_OBJECT_0:
+                break
 
     def _run_scan_thread(self):
         thread = threading.Thread(target=run_scan, daemon=True)
@@ -132,14 +136,12 @@ if __name__ == '__main__':
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(AppDiscoveryService)
         servicemanager.StartServiceCtrlDispatcher()
-
     elif '--scan-now' in sys.argv:
         # Manual scan
         print("=" * 50)
-        print("  Manual Scan Triggered")
+        print(" Manual Scan Triggered")
         print("=" * 50)
         run_scan()
-
     else:
         # install / uninstall / start / stop எல்லாம் handle பண்ணும்
         win32serviceutil.HandleCommandLine(AppDiscoveryService)

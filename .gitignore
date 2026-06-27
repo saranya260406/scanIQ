@@ -31,3 +31,12 @@ Thumbs.db
 
 # Data files that change frequently
 *.csv
+
+# Release artifacts and packaged binaries
+*.exe
+*.zip
+*.msi
+*.pkg
+*.tar.gz
+*.whl
+service.log

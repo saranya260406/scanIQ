@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 class DeduplicationEngine:
     """
     Rule-based deduplication:
-    - Same name + same version → merge (sources combine aagum)
-    - Name normalize panni compare pannும் (case, spaces, special chars)
+    - Same name + same version → merge
+    - Less aggressive normalization — different apps தனியா இருக்கும்
     """
 
     def deduplicate(self, results: dict) -> list:
@@ -33,24 +33,24 @@ class DeduplicationEngine:
 
         logger.info(f"Total before dedup: {len(all_apps)}")
 
-        # Name + version key ile group pannuven
         seen: dict[str, dict] = {}
 
         for app in all_apps:
             name    = self._normalize(app.get('name', ''))
             version = self._normalize(str(app.get('version', '')))
-            key     = f"{name}||{version}"
+            source  = app.get('source', '')
+
+            # Same name + same version + same source → duplicate
+            key = f"{name}||{version}||{source}"
 
             if key in seen:
-                # Merge: sources list update pannuven
                 existing = seen[key]
                 existing_sources = existing.get('sources', [existing.get('source', '')])
-                new_source       = app.get('source', '')
+                new_source = app.get('source', '')
                 if new_source and new_source not in existing_sources:
                     existing_sources.append(new_source)
                 existing['sources'] = existing_sources
 
-                # install_location update pannuven (better path prefer)
                 if (not existing.get('install_location') or
                         existing.get('install_location') == 'Unknown'):
                     loc = app.get('install_location', '')
@@ -70,6 +70,7 @@ class DeduplicationEngine:
         }
 
     def _normalize(self, text: str) -> str:
+        # Less aggressive — spaces and case மட்டும் normalize பண்ணும்
         text = text.lower().strip()
-        text = re.sub(r'[^a-z0-9]', '', text)
+        text = re.sub(r'\s+', ' ', text)
         return text

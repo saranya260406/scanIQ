@@ -1,11 +1,9 @@
 """
-Real-Time File/App Watcher
-Ella drives layum (C:, D:, E: etc.) continuously watch paNNi,
-pudhusa edhachum file/app varum udane — main.py scan pannura
-SAME format-la, SAME single combined CSV-la add paNNum.
-
-Run pannanum: python realtime_watcher.py
-(Idhu background-la continuous run aagum — Ctrl+C pannina mattum stop aagum)
+Real-Time App File Watcher
+Downloads/Desktop/Documents/etc -la app installer (.exe/.msi)
+allathu archive (.zip/.rar/.7z) file pudhusa varum udane,
+full system scan trigger aagi, scheduled scan mathiri puthu CSV create aagum.
+Photo, video, doc, txt - ellame ignore aagum.
 """
 
 import os
@@ -13,9 +11,7 @@ import sys
 import time
 import string
 import logging
-import csv
-import glob
-from datetime import datetime
+import threading
 
 try:
     from watchdog.observers import Observer
@@ -25,88 +21,58 @@ except ImportError:
     print("    pip install watchdog")
     sys.exit(1)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-
-# Category mapping — same logic as user_files_scanner.py
-CATEGORY_MAP = {
-    '.pdf': 'Document', '.doc': 'Document', '.docx': 'Document',
-    '.xls': 'Document', '.xlsx': 'Document', '.ppt': 'Document',
-    '.pptx': 'Document', '.txt': 'Document', '.rtf': 'Document',
-    '.odt': 'Document', '.ods': 'Document', '.odp': 'Document',
-    '.csv': 'Document',
-
-    '.zip': 'Archive', '.rar': 'Archive', '.7z': 'Archive',
-    '.tar': 'Archive', '.gz': 'Archive', '.cab': 'Archive',
-    '.iso': 'Archive', '.img': 'Archive',
-
-    '.exe': 'Installer', '.msi': 'Installer', '.msix': 'Installer',
-    '.msixbundle': 'Installer', '.appx': 'Installer',
-    '.appxbundle': 'Installer', '.setup': 'Installer',
-
-    '.mp3': 'Audio', '.wav': 'Audio', '.flac': 'Audio',
-    '.aac': 'Audio', '.ogg': 'Audio', '.wma': 'Audio', '.m4a': 'Audio',
-
-    '.py': 'Code', '.js': 'Code', '.ts': 'Code', '.java': 'Code',
-    '.cs': 'Code', '.cpp': 'Code', '.c': 'Code', '.go': 'Code',
-    '.html': 'Code', '.css': 'Code', '.php': 'Code', '.rb': 'Code',
-    '.sh': 'Code', '.bat': 'Code', '.ps1': 'Code', '.sql': 'Code',
-
-    '.json': 'Data', '.xml': 'Data', '.yaml': 'Data', '.yml': 'Data',
-    '.sqlite': 'Data', '.ini': 'Data', '.cfg': 'Data', '.conf': 'Data',
-
-    '.lnk': 'Shortcut', '.url': 'Shortcut',
+# Indha extensions mattum trigger pannum - installer + archive (zip-ku exe irukkalam)
+WATCH_EXTENSIONS = {
+    '.exe', '.msi', '.msix', '.msixbundle', '.appx', '.appxbundle',
+    '.zip', '.rar', '.7z',
 }
 
-# Images & videos — skip (same as user_files_scanner.py)
-SKIP_EXTENSIONS = {
-    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp',
-    '.tiff', '.tif', '.raw', '.heic', '.heif', '.svg',
-    '.ico', '.psd', '.ai', '.eps',
-    '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
-    '.webm', '.m4v', '.3gp', '.mpeg', '.mpg', '.ts',
-    '.db', '.thumbs', '.tmp', '.crdownload', '.partial',
-}
-
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR  = os.path.join(PROJECT_DIR, "exports")
-LOG_DIR     = os.path.join(PROJECT_DIR, "logs")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
-
-# Exact same columns as csv_exporter.py
-CSV_FIELDS = [
-    'Name', 'Publisher', 'Version', 'Category', 'Risk Level',
-    'Recommendation', 'AI Description', 'Installed On', 'Size',
-    'Install Location', 'Drive', 'Source',
-]
-
+# System folders skip
 SKIP_FOLDERS = {
     'windows', 'system volume information', '$recycle.bin',
     'recovery', 'perflogs', 'programdata', 'temp', 'tmp',
     'node_modules', '__pycache__', '.git', 'appdata',
+    'program files', 'program files (x86)',
+    'windowsapps', 'winsxs', 'servicing',
 }
 
-# ── Logging ───────────────────────────────────────────────────────────────────
+# User folders mattum watch
+WATCH_FOLDERS = {
+    'downloads', 'desktop', 'documents', 'videos', 'music',
+    'pictures', 'onedrive',
+}
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(os.path.join(LOG_DIR, "realtime_watcher.log"), encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
-)
-log = logging.getLogger("RealTimeWatcher")
+if getattr(sys, 'frozen', False):
+    PROJECT_DIR = os.path.dirname(sys.executable)
+else:
+    PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+log = logging.getLogger("application")
+
 
 def should_skip(path: str) -> bool:
     path_lower = path.lower()
-    return any(f"\\{skip}\\" in path_lower or path_lower.endswith(f"\\{skip}") for skip in SKIP_FOLDERS)
+    for skip in SKIP_FOLDERS:
+        if f"\\{skip}\\" in path_lower or path_lower.endswith(f"\\{skip}"):
+            return True
+    return False
 
 
-def get_all_drives() -> list[str]:
+def is_user_folder(path: str) -> bool:
+    path_lower = path.lower()
+    for watch in WATCH_FOLDERS:
+        if f"\\{watch}\\" in path_lower or f"\\{watch}" in path_lower:
+            return True
+    drive = os.path.splitdrive(path)[0].upper()
+    if drive != "C:":
+        return True
+    return False
+
+
+def get_all_drives() -> list:
     drives = []
     for letter in string.ascii_uppercase:
         drive = f"{letter}:\\"
@@ -115,37 +81,20 @@ def get_all_drives() -> list[str]:
     return drives
 
 
-def format_size(size_mb: float) -> str:
-    if size_mb >= 1024:
-        return f"{round(size_mb / 1024, 2)} GB"
-    return f"{round(size_mb, 2)} MB"
-
-
-def find_main_csv() -> str:
-    """
-    Find the SAME single combined CSV that main.py produces.
-    If main.py hasn't run yet, fall back to a fixed-name file
-    so real-time entries are never lost — main.py will then
-    append into this same file on its next run too.
-    """
-    matches = glob.glob(os.path.join(OUTPUT_DIR, "Software_Inventory_ALL_*.csv"))
-    if matches:
-        return max(matches, key=os.path.getmtime)
-    return os.path.join(OUTPUT_DIR, "Software_Inventory_ALL.csv")
-
-
-def append_row_to_csv(csv_path: str, record: dict):
-    file_exists = os.path.exists(csv_path)
-    with open(csv_path, "a", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(record)
-
-
-# ── Event Handler ─────────────────────────────────────────────────────────────
-
 class FileWatchHandler(FileSystemEventHandler):
+    """
+    App installer/archive file detect aana udane scan_callback() call panni
+    full scan trigger pannum. 15 seconds debounce - multiple files ஒரே
+    நேரத்தில் வந்தாலும் ஒரே scan-ல சேரும்.
+    """
+
+    DEBOUNCE_SECONDS = 15
+
+    def __init__(self, scan_callback=None):
+        super().__init__()
+        self.scan_callback = scan_callback
+        self._last_trigger = 0
+        self._lock = threading.Lock()
 
     def on_created(self, event):
         if event.is_directory:
@@ -159,95 +108,65 @@ class FileWatchHandler(FileSystemEventHandler):
 
     def _handle_file(self, path: str):
         ext = os.path.splitext(path)[1].lower()
+        name = os.path.basename(path)
 
-        # Skip images, videos, temp/partial download files
-        if ext in SKIP_EXTENSIONS:
+        if ext not in WATCH_EXTENSIONS:
             return
         if should_skip(path):
             return
+        if not is_user_folder(path):
+            return
 
-        # Wait briefly — file might still be writing (large downloads)
         time.sleep(1.5)
+        if not os.path.exists(path):
+            return
 
-        try:
-            if not os.path.exists(path):
+        log.info(f"App/installer file detected: {name} -> triggering full scan")
+        print(f"\nNew app/installer detected: {name}")
+
+        self._trigger_scan()
+
+    def _trigger_scan(self):
+        with self._lock:
+            now = time.time()
+            if now - self._last_trigger < self.DEBOUNCE_SECONDS:
+                log.info("Scan already triggered recently - skipping duplicate")
                 return
+            self._last_trigger = now
 
-            size_mb  = round(os.path.getsize(path) / (1024 * 1024), 2)
-            drive    = os.path.splitdrive(path)[0].upper()
-            name     = os.path.basename(path)
-            category = CATEGORY_MAP.get(ext, 'Other')
+        if self.scan_callback:
+            threading.Thread(target=self.scan_callback, daemon=True).start()
+        else:
+            log.warning("No scan_callback set - cannot trigger scan")
 
-            record = {
-                'Name':              name,
-                'Publisher':         'Unknown',
-                'Version':           'Unknown',
-                'Category':          category,
-                'Risk Level':        '',
-                'Recommendation':    '',
-                'AI Description':    '',
-                'Installed On':      datetime.now().strftime('%d-%m-%Y'),
-                'Size':              format_size(size_mb),
-                'Install Location':  path,
-                'Drive':             drive,
-                'Source':            'RealTimeDownload',
-            }
-
-            main_csv = find_main_csv()
-            append_row_to_csv(main_csv, record)
-
-            log.info(f"NEW FILE DETECTED → {name} ({size_mb} MB) on {drive} → added to {main_csv}")
-            print(f"\n🔔 New file detected: {name}")
-            print(f"   Category: {category}  |  Drive: {drive}  |  Size: {format_size(size_mb)}")
-            print(f"   Added to: {os.path.basename(main_csv)}\n")
-
-        except (PermissionError, OSError) as e:
-            log.warning(f"Could not process {path}: {e}")
-        except Exception as e:
-            log.error(f"Error processing {path}: {e}")
-
-
-# ── Main Watcher ──────────────────────────────────────────────────────────────
 
 def main():
+    """Standalone test mode - callback illama, detection mattum log pannum."""
     print("=" * 55)
-    print("  Real-Time File Watcher — Started")
+    print("  Real-Time File Watcher - Started (standalone test)")
     print("=" * 55)
 
     drives = get_all_drives()
     log.info(f"Watching drives: {drives}")
     print(f"Watching drives: {', '.join(drives)}")
-    print(f"Tracking ALL file types (images/videos excluded)")
-    print(f"Writing to single combined CSV in: {OUTPUT_DIR}")
     print("\nPress Ctrl+C to stop.\n")
-    print("=" * 55)
 
     observer = Observer()
-    handler  = FileWatchHandler()
+    handler = FileWatchHandler()
 
-    watched_count = 0
     for drive in drives:
         try:
             observer.schedule(handler, drive, recursive=True)
-            watched_count += 1
         except Exception as e:
             log.error(f"Could not watch {drive}: {e}")
 
-    if watched_count == 0:
-        log.error("No drives could be watched. Exiting.")
-        return
-
     observer.start()
-    log.info(f"Watcher started on {watched_count} drive(s).")
-
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-        log.info("Watcher stopped by user.")
         print("\nStopped.")
-
     observer.join()
 
 
