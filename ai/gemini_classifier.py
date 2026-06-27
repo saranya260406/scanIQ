@@ -103,13 +103,25 @@ class GeminiClassifier:
 
     def __init__(self, api_key):
         self.api_key = api_key
-        self.client = genai.Client(api_key=api_key)
+        self.client = None
+
+        if api_key:
+            try:
+                self.client = genai.Client(api_key=api_key)
+                logger.info("Gemini Classifier initialized")
+            except Exception as exc:
+                logger.warning(
+                    "Gemini client initialization failed; falling back to offline mode: %s",
+                    exc,
+                )
+        else:
+            logger.warning("No Gemini API key provided; running in offline mode")
+
         # Compile patterns once for performance
         self._compiled_patterns = [
             re.compile(p, re.IGNORECASE)
             for p in self.SYSTEM_COMPONENT_PATTERNS
         ]
-        logger.info("Gemini Classifier initialized")
 
     # ─────────────────────────────────────────────────────────────────
     # Helper: Rule-based system component detector
@@ -148,6 +160,10 @@ class GeminiClassifier:
         """
         if not app_list:
             return []
+
+        if not self.api_key or not self.client:
+            logger.info("AI deduplication skipped because no Gemini API key is configured")
+            return app_list
 
         logger.info(f"AI Deduplication started: {len(app_list)} apps")
         print(f"\n[AI Dedup] {len(app_list)} apps Gemini-க்கு அனுப்புகிறோம்...")
