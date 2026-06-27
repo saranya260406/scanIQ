@@ -42,6 +42,7 @@ If you want the packaged installer, download it from the GitHub Releases page fo
 ## API key and AI features
 The scan and CSV export workflow can run without a Gemini API key. In that case, scanIQ uses its built-in rule-based processing and still produces an output report.
 
+### Optional: enable AI features
 If you want the optional AI-based deduplication and classification features, create a Gemini API key from Google AI Studio and set it as an environment variable:
 
 ```bash
@@ -49,6 +50,8 @@ set GEMINI_API_KEY=your_api_key_here
 ```
 
 You can also place it in a .env file in the project root.
+
+If no key is set, scanIQ will continue in offline mode and skip the AI step automatically.
 
 ## Notes
 - Some features may require API keys or local model configuration.
