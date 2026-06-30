@@ -74,7 +74,6 @@ class StoreScanner:
                 publisher = item.get("Publisher", "")
                 install_location = item.get("InstallLocation", "")
 
-                print(f"STORE FOUND: {name}")
 
                 if self._is_inbuilt(name, publisher):
                     continue

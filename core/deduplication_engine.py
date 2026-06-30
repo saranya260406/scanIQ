@@ -70,7 +70,7 @@ class DeduplicationEngine:
         }
 
     def _normalize(self, text: str) -> str:
-        # Less aggressive — spaces and case மட்டும் normalize பண்ணும்
+        
         text = text.lower().strip()
         text = re.sub(r'\s+', ' ', text)
         return text

@@ -1,5 +1,9 @@
 {
-  "scan_interval_hours": 24,
-  "output_dir": "exports",
-  "gemini_api_key": "${GEMINI_API_KEY}"
+  "Mode": "scheduled",
+  "LogKey": {
+    "LogType": 1,
+    "Days": 7
+  },
+  "ExportFolderPath": "D:\\Testing20260623\\",
+  "ScanTime": "00:10"
 }

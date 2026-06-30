@@ -15,9 +15,6 @@ else:
 
 sys.path.insert(0, PROJECT_PATH)
 
-from dotenv import load_dotenv
-load_dotenv(os.path.join(PROJECT_PATH, ".env"))
-
 from scanners.scanner_manager import ScannerManager
 from ai.gemini_classifier import GeminiClassifier
 from core.deduplication_engine import DeduplicationEngine
@@ -83,16 +80,16 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             scanner_log = logger_dict["scanner"]
             ai_log = logger_dict["ai_processing"]
 
-            GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+            GEMINI_API_KEY = settings.get_api_key()
 
             # RealTime Watcher
             if Observer:
                 self.observer = Observer()
                 handler = FileWatchHandler(
-    scan_callback=lambda: self._run_pipeline(
-        app_log, scanner_log, ai_log, settings, GEMINI_API_KEY
-    )
-)
+                    scan_callback=lambda: self._run_pipeline(
+                        app_log, scanner_log, ai_log, settings, GEMINI_API_KEY
+                    )
+                )
                 for drive in get_all_drives():
                     try:
                         self.observer.schedule(handler, drive, recursive=True)
@@ -113,7 +110,6 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             if mode.lower() == "scheduled":
                 app_log.info("Service: Running in scheduled mode")
 
-                # Scheduler thread - stop_event மூலம் gracefully stop ஆகும்
                 start_scheduler(
                     settings,
                     lambda: self._run_pipeline(
@@ -123,7 +119,6 @@ class ScanIQService(win32serviceutil.ServiceFramework):
                     self.stop_event
                 )
 
-                # Service stop signal வரும் வரை wait பண்ணு
                 win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
 
             else:

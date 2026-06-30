@@ -1,5 +1,5 @@
-from dotenv import load_dotenv
 import os
+import time
 
 # Core pipeline modules
 from scanners.scanner_manager import ScannerManager
@@ -12,15 +12,11 @@ from config.settings_loader import SettingsLoader
 from log_config import LogConfig
 from scheduler_utils import start_scheduler
 
-# Load environment variables
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 
 # =========================
 # PIPELINE CORE
 # =========================
-def run_pipeline(app_log, scanner_log, ai_log, settings):
+def run_pipeline(app_log, scanner_log, ai_log, settings, api_key):
 
     app_log.info("Pipeline execution started")
 
@@ -69,7 +65,7 @@ def run_pipeline(app_log, scanner_log, ai_log, settings):
     # =========================
     print("\n[AI] Initializing classifier...")
 
-    classifier = GeminiClassifier(GEMINI_API_KEY)
+    classifier = GeminiClassifier(api_key)
 
     if classifier.check_internet():
 
@@ -133,8 +129,6 @@ def main():
 
     logger_dict = log_manager.setup_logging()
 
-    print("Logger Keys:", logger_dict.keys())
-
     app_log = logger_dict["application"]
     scanner_log = logger_dict["scanner"]
     ai_log = logger_dict["ai_processing"]
@@ -155,36 +149,17 @@ def main():
     scanner_log.info("Scanner logger working")
     ai_log.info("AI logger working")
 
-    mode = (
-        settings.get_mode()
-        if hasattr(settings, "get_mode")
-        else "manual"
+    GEMINI_API_KEY = settings.get_api_key()
+
+    app_log.info("Running immediate scan (main.py manual run)")
+
+    run_pipeline(
+        app_log,
+        scanner_log,
+        ai_log,
+        settings,
+        GEMINI_API_KEY
     )
-
-    if mode.lower() == "schedule":
-
-        app_log.info("Running in scheduled mode")
-
-        start_scheduler(
-            settings,
-            lambda: run_pipeline(
-                app_log,
-                scanner_log,
-                ai_log,
-                settings
-            )
-        )
-
-    else:
-
-        app_log.info("Running in manual mode")
-
-        run_pipeline(
-            app_log,
-            scanner_log,
-            ai_log,
-            settings
-        )
 
 if __name__ == "__main__":
     main()

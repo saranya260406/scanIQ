@@ -15,7 +15,8 @@ class SettingsLoader:
             "Days": 2
         },
         "ExportFolderPath": "exports/",
-        "ScanTime": "11:45"  # CHANGED: Default to 11:45
+        "ScanTime": "11:45",  # CHANGED: Default to 11:45
+        "GeminiApiKey": ""
     }
 
     def __init__(self, path=None):
@@ -108,6 +109,10 @@ class SettingsLoader:
         cfg["ScanTime"] = scan_time
         logger.debug(f"Scan time set to: {scan_time}")
 
+        # ---------------- GEMINI API KEY ----------------
+        api_key = cfg.get("GeminiApiKey", "").strip()
+        cfg["GeminiApiKey"] = api_key
+
         return cfg
 
     # ---------------- SAFE INT ----------------
@@ -183,3 +188,6 @@ class SettingsLoader:
 
     def get_mode(self):
         return self.config.get("Mode", self.DEFAULTS["Mode"])
+
+    def get_api_key(self):
+        return self.config.get("GeminiApiKey", "")

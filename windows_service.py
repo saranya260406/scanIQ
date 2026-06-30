@@ -12,9 +12,6 @@ import win32service
 import win32event
 import servicemanager
 
-from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-
 from config.settings_loader import SettingsLoader
 from log_config import LogConfig
 from scanners.scanner_manager import ScannerManager
@@ -23,22 +20,22 @@ from core.deduplication_engine import DeduplicationEngine
 from exports.csv_exporter import CSVExporter
 
 
-# ─── Settings Load (settings.json) ─────────────────────────
+# ─── Settings Load (settings.json) ─────────────────────────────────
 def load_settings():
     return SettingsLoader()
 
 
-# ─── Core Scan Logic ───────────────────────────────────────
+# ─── Core Scan Logic ────────────────────────────────────────────────
 def run_scan():
     settings = load_settings()
     log_manager = LogConfig(settings)
     logger_dict = log_manager.setup_logging()
-    
+
     app_log = logger_dict["application"]
     scanner_log = logger_dict["scanner"]
     ai_log = logger_dict["ai_processing"]
-    
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+    GEMINI_API_KEY = settings.get_api_key()
 
     app_log.info(f"Scan started at {datetime.now()}")
 
@@ -68,14 +65,14 @@ def run_scan():
         # Step 4: Export CSV
         exporter = CSVExporter(output_dir=settings.get_export_path())
         export_path = exporter.export(classified_apps, filename="Software_Inventory.csv")
-        
+
         app_log.info(f"Scan complete. CSV exported successfully")
-        
+
     except Exception as e:
         app_log.error(f"Scan error: {e}")
 
 
-# ─── Windows Service Class ─────────────────────────────────
+# ─── Windows Service Class ──────────────────────────────────────────
 class AppDiscoveryService(win32serviceutil.ServiceFramework):
     _svc_name_ = "AppDiscoveryService"
     _svc_display_name_ = "Application Discovery Service"
@@ -85,8 +82,7 @@ class AppDiscoveryService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.stop_event = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
-        
-        # Setup basic logging
+
         logging.basicConfig(
             filename="service.log",
             level=logging.INFO,
@@ -115,12 +111,10 @@ class AppDiscoveryService(win32serviceutil.ServiceFramework):
         logging.info(f"Scheduler: daily CSV export at {scan_time}")
         print(f"[SCHEDULER] Service running. Daily CSV export time: {scan_time}")
 
-        # Schedule the job - CSV will be exported ONLY at the scheduled time
         schedule.every().day.at(scan_time).do(self._run_scan_thread)
 
         while self.running:
             schedule.run_pending()
-            # Check every 30 seconds, respect stop_event
             if win32event.WaitForSingleObject(self.stop_event, 30000) == win32event.WAIT_OBJECT_0:
                 break
 
@@ -129,19 +123,16 @@ class AppDiscoveryService(win32serviceutil.ServiceFramework):
         thread.start()
 
 
-# ─── Entry Point ───────────────────────────────────────────
+# ─── Entry Point ────────────────────────────────────────────────────
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        # Service mode
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(AppDiscoveryService)
         servicemanager.StartServiceCtrlDispatcher()
     elif '--scan-now' in sys.argv:
-        # Manual scan
         print("=" * 50)
         print(" Manual Scan Triggered")
         print("=" * 50)
         run_scan()
     else:
-        # install / uninstall / start / stop எல்லாம் handle பண்ணும்
         win32serviceutil.HandleCommandLine(AppDiscoveryService)
