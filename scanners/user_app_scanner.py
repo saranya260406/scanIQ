@@ -1,21 +1,64 @@
 import winreg
 import datetime
 import logging
+import subprocess
 
 logger = logging.getLogger(__name__)
 
-class UserAppScanner:
 
-    REGISTRY_PATHS = [
-        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
-    ]
+class UserAppScanner:
 
     def scan(self):
         apps = []
-        for hive, path in self.REGISTRY_PATHS:
-            apps.extend(self._scan_registry_path(hive, path))
+        sid = self._get_logged_in_user_sid()
+
+        if sid:
+            # LocalSystem account-laye irundhu, logged-in user oda
+            # HKEY_USERS\<SID>\...\Uninstall path-ah explicit-ah padikkurom
+            path = sid + r"\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+            apps.extend(self._scan_registry_path(winreg.HKEY_USERS, path))
+        else:
+            # Fallback - normal user account-laye run aanaa
+            apps.extend(self._scan_registry_path(
+                winreg.HKEY_CURRENT_USER,
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+            ))
+
         logger.info(f"User App Scanner: {len(apps)} apps found")
         return apps
+
+    def _get_logged_in_user_sid(self):
+        """
+        Service LocalSystem account-la run aanalum,
+        actual logged-in user-oda SID-ah kandupidikkum.
+        """
+        try:
+            result = subprocess.run(
+                [
+                    "powershell", "-NoProfile", "-Command",
+                    "(Get-WmiObject -Class Win32_ComputerSystem).UserName"
+                ],
+                capture_output=True, text=True, timeout=15
+            )
+            username_full = result.stdout.strip()
+            if not username_full or "\\" not in username_full:
+                return None
+
+            username = username_full.split("\\")[-1]
+
+            sid_result = subprocess.run(
+                [
+                    "powershell", "-NoProfile", "-Command",
+                    f"(New-Object System.Security.Principal.NTAccount('{username}')).Translate([System.Security.Principal.SecurityIdentifier]).Value"
+                ],
+                capture_output=True, text=True, timeout=15
+            )
+            sid = sid_result.stdout.strip()
+            return sid if sid else None
+
+        except Exception as e:
+            logger.error(f"Could not get logged-in user SID: {e}")
+            return None
 
     def _scan_registry_path(self, hive, path):
         apps = []

@@ -147,11 +147,17 @@ class ScanIQService(win32serviceutil.ServiceFramework):
 
             dedup_engine = DeduplicationEngine()
             clean_apps = dedup_engine.deduplicate(results)
+            app_log.info(f"Dedup completed - Unique apps: {len(clean_apps)}")
 
             classifier = GeminiClassifier(GEMINI_API_KEY)
 
             if classifier.check_internet():
-                classified_apps = classifier.classify_apps(clean_apps)
+                ai_log.info("AI Mode: Online (Gemini enabled)")
+
+                ai_clean_apps = classifier.deduplicate_apps(clean_apps)
+                ai_log.info(f"AI Dedup complete: {len(ai_clean_apps)} apps")
+
+                classified_apps = classifier.classify_apps(ai_clean_apps)
                 ai_log.info("AI classification done")
             else:
                 classified_apps = clean_apps

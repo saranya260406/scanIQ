@@ -5,6 +5,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
 class StoreScanner:
 
     SKIP_PUBLISHERS = [
@@ -31,16 +32,50 @@ class StoreScanner:
         logger.info(f"Store Scanner: {len(apps)} apps found")
         return apps
 
+    def _get_logged_in_username(self):
+        """
+        Service LocalSystem account-la run aanalum,
+        actual logged-in user oda username kandupidikkum.
+        """
+        try:
+            result = subprocess.run(
+                [
+                    "powershell", "-NoProfile", "-Command",
+                    "(Get-WmiObject -Class Win32_ComputerSystem).UserName"
+                ],
+                capture_output=True, text=True, timeout=15
+            )
+            username_full = result.stdout.strip()
+            if not username_full or "\\" not in username_full:
+                return None
+            return username_full.split("\\")[-1]
+        except Exception as e:
+            logger.error(f"Could not get logged-in username: {e}")
+            return None
+
     def _scan_appx_packages(self):
         apps = []
 
         try:
-            cmd = (
-                "Get-AppxPackage | "
-                "Select-Object Name,Version,Publisher,"
-                "InstallLocation,PackageFullName | "
-                "ConvertTo-Json -Depth 3"
-            )
+            username = self._get_logged_in_username()
+
+            if username:
+                # LocalSystem account-laye, logged-in user oda
+                # AppxPackages-ah explicit-ah padikkurom
+                cmd = (
+                    f"Get-AppxPackage -User '{username}' | "
+                    "Select-Object Name,Version,Publisher,"
+                    "InstallLocation,PackageFullName | "
+                    "ConvertTo-Json -Depth 3"
+                )
+            else:
+                # Fallback - normal user account-laye run aanaa
+                cmd = (
+                    "Get-AppxPackage | "
+                    "Select-Object Name,Version,Publisher,"
+                    "InstallLocation,PackageFullName | "
+                    "ConvertTo-Json -Depth 3"
+                )
 
             result = subprocess.run(
                 [
@@ -73,7 +108,6 @@ class StoreScanner:
                 name = item.get("Name", "")
                 publisher = item.get("Publisher", "")
                 install_location = item.get("InstallLocation", "")
-
 
                 if self._is_inbuilt(name, publisher):
                     continue
