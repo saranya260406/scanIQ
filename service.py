@@ -86,8 +86,9 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             if Observer:
                 self.observer = Observer()
                 handler = FileWatchHandler(
-                    scan_callback=lambda: self._run_pipeline(
-                        app_log, scanner_log, ai_log, settings, GEMINI_API_KEY
+                    scan_callback=lambda detected_file=None: self._run_pipeline(
+                        app_log, scanner_log, ai_log, settings, GEMINI_API_KEY,
+                        detected_file=detected_file
                     )
                 )
                 for drive in get_all_drives():
@@ -137,7 +138,7 @@ class ScanIQService(win32serviceutil.ServiceFramework):
         except Exception as e:
             self.logger.error(f"Service error: {e}")
 
-    def _run_pipeline(self, app_log, scanner_log, ai_log, settings, GEMINI_API_KEY):
+    def _run_pipeline(self, app_log, scanner_log, ai_log, settings, GEMINI_API_KEY, detected_file=None):
         try:
             app_log.info("Pipeline started from service")
 
@@ -162,6 +163,26 @@ class ScanIQService(win32serviceutil.ServiceFramework):
             else:
                 classified_apps = clean_apps
                 ai_log.warning("Offline mode - skipping AI")
+
+            # RealTime Watcher trigger pannina file irundha,
+            # automatic-ah ஒரு extra row-ah CSV-la add pannrom
+            if detected_file:
+                already_present = any(
+                    (app.get('name') or '').strip().lower() ==
+                    detected_file['name'].strip().lower()
+                    for app in classified_apps
+                )
+                if not already_present:
+                    classified_apps.append({
+                        'name': detected_file['name'],
+                        'publisher': 'Unknown',
+                        'version': 'Unknown',
+                        'install_date': detected_file.get('detected_date', ''),
+                        'install_location': detected_file.get('path', 'Unknown'),
+                        'size_mb': detected_file.get('size_mb'),
+                        'source': 'RealTimeDownload',
+                    })
+                    app_log.info(f"Added detected file to CSV: {detected_file['name']}")
 
             exporter = CSVExporter(output_dir=settings.get_export_path())
             export_path = exporter.export(classified_apps, filename="Software_Inventory.csv")

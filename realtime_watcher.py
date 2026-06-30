@@ -2,7 +2,8 @@
 Real-Time App File Watcher
 Downloads/Desktop/Documents/etc -la app installer (.exe/.msi)
 allathu archive (.zip/.rar/.7z) file pudhusa varum udane,
-full system scan trigger aagi, scheduled scan mathiri puthu CSV create aagum.
+installer process exit aaguravaraikkum wait pannitu,
+full system scan trigger aagi puthu CSV create aagum.
 Photo, video, doc, txt - ellame ignore aagum.
 """
 
@@ -21,13 +22,11 @@ except ImportError:
     print("    pip install watchdog")
     sys.exit(1)
 
-# Indha extensions mattum trigger pannum - installer + archive (zip-ku exe irukkalam)
 WATCH_EXTENSIONS = {
     '.exe', '.msi', '.msix', '.msixbundle', '.appx', '.appxbundle',
     '.zip', '.rar', '.7z',
 }
 
-# System folders skip
 SKIP_FOLDERS = {
     'windows', 'system volume information', '$recycle.bin',
     'recovery', 'perflogs', 'programdata', 'temp', 'tmp',
@@ -36,7 +35,6 @@ SKIP_FOLDERS = {
     'windowsapps', 'winsxs', 'servicing',
 }
 
-# User folders mattum watch
 WATCH_FOLDERS = {
     'downloads', 'desktop', 'documents', 'videos', 'music',
     'pictures', 'onedrive',
@@ -83,18 +81,26 @@ def get_all_drives() -> list:
 
 class FileWatchHandler(FileSystemEventHandler):
     """
-    App installer/archive file detect aana udane scan_callback() call panni
-    full scan trigger pannum. 15 seconds debounce - multiple files ஒரே
-    நேரத்தில் வந்தாலும் ஒரே scan-ல சேரும்.
+    App installer/archive file detect aana udane:
+    - .exe/.msi: fixed wait pannitu (install mudikkura time kuduthu)
+    - .zip/.rar/.7z: konjam wait pannitu
+    apparam scan trigger pannum.
+
+    Scan already RUNNING-na, puthu request "pending"-ah mark pannitu,
+    current scan mudinjadhum automatic-ah next scan start aagum
+    (skip pannaadhu - queue pannum).
     """
 
-    DEBOUNCE_SECONDS = 15
+    ZIP_WAIT_SECONDS = 5
+    INSTALL_WAIT_SECONDS = 45  # installer download + run aagi mudikkura time
 
     def __init__(self, scan_callback=None):
         super().__init__()
         self.scan_callback = scan_callback
-        self._last_trigger = 0
         self._lock = threading.Lock()
+        self._scan_running = False
+        self._scan_pending = False
+        self._pending_name = None
 
     def on_created(self, event):
         if event.is_directory:
@@ -121,23 +127,72 @@ class FileWatchHandler(FileSystemEventHandler):
         if not os.path.exists(path):
             return
 
-        log.info(f"App/installer file detected: {name} -> triggering full scan")
+        log.info(f"App/installer file detected: {name}")
         print(f"\nNew app/installer detected: {name}")
 
-        self._trigger_scan()
+        threading.Thread(
+            target=self._wait_and_trigger,
+            args=(ext, name),
+            daemon=True
+        ).start()
 
-    def _trigger_scan(self):
-        with self._lock:
-            now = time.time()
-            if now - self._last_trigger < self.DEBOUNCE_SECONDS:
-                log.info("Scan already triggered recently - skipping duplicate")
-                return
-            self._last_trigger = now
-
-        if self.scan_callback:
-            threading.Thread(target=self.scan_callback, daemon=True).start()
+    def _wait_and_trigger(self, ext, name):
+        if ext in ('.zip', '.rar', '.7z'):
+            log.info(f"'{name}' is an archive - waiting {self.ZIP_WAIT_SECONDS}s")
+            time.sleep(self.ZIP_WAIT_SECONDS)
         else:
-            log.warning("No scan_callback set - cannot trigger scan")
+            log.info(f"Waiting {self.INSTALL_WAIT_SECONDS}s for '{name}' to finish installing...")
+            time.sleep(self.INSTALL_WAIT_SECONDS)
+
+        self._request_scan(name)
+
+    def _request_scan(self, name):
+        """
+        Scan already run aaguthunna, indha request-ah pending-ah
+        mark pannrom - skip pannaadhu. Current scan mudinjadhum,
+        automatic-ah oru extra scan run aagum (pending request-ku).
+        """
+        with self._lock:
+            self._pending_name = name
+            if self._scan_running:
+                log.info(f"Scan already running - queuing scan for '{name}' after current scan finishes")
+                self._scan_pending = True
+                return
+            self._scan_running = True
+
+        self._run_scan_loop()
+
+    def _run_scan_loop(self):
+        """
+        Scan run pannitu, run aagikkitu irukkura nerathula
+        innoru file vandhu pending mark aana, andha scan-um
+        immediate-ah apparam run aagum.
+        """
+        while True:
+            with self._lock:
+                current_name = self._pending_name
+
+            if self.scan_callback:
+                try:
+                    self.scan_callback(detected_file={'name': current_name})
+                except TypeError:
+                    # scan_callback detected_file accept pannaatha fallback
+                    try:
+                        self.scan_callback()
+                    except Exception as e:
+                        log.error(f"Scan callback error: {e}")
+                except Exception as e:
+                    log.error(f"Scan callback error: {e}")
+            else:
+                log.warning("No scan_callback set - cannot trigger scan")
+
+            with self._lock:
+                if self._scan_pending:
+                    self._scan_pending = False
+                    continue  # innoru scan run pannrom
+                else:
+                    self._scan_running = False
+                    break
 
 
 def main():
